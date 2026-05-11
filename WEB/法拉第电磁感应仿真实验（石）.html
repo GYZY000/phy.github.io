@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D仿真物理实验：探究感应电动势 | 双实验记录表 + 线性拟合图像</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Microsoft YaHei', 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        /* 顶部控制栏 - 包含数据显示和实验控制按钮 */
+        .top-bar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            backdrop-filter: blur(12px);
+            background: rgba(20, 20, 35, 0.85);
+            border-radius: 24px;
+            padding: 12px 25px;
+            border: 1px solid rgba(255,215,0,0.3);
+            z-index: 20;
+            pointer-events: auto;
+        }
+        .data-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            background: rgba(0,0,0,0.4);
+            padding: 8px 20px;
+            border-radius: 20px;
+        }
+        .data-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            color: white;
+            font-size: 13px;
+            min-width: 100px;
+        }
+        .data-item .label {
+            font-size: 11px;
+            color: #ffd966;
+            margin-bottom: 2px;
+        }
+        .data-item .value {
+            font-size: 18px;
+            font-weight: bold;
+            font-family: monospace;
+            color: #ffaa66;
+        }
+        .control-group-top {
+            display: flex;
+            gap: 15px;
+            background: rgba(0,0,0,0.4);
+            padding: 5px 20px;
+            border-radius: 20px;
+            align-items: center;
+        }
+        .control-group-top label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #ffd966;
+        }
+        .control-group-top input {
+            width: 140px;
+            background: #2a2a3a;
+            border: none;
+            color: white;
+            border-radius: 20px;
+            padding: 5px 10px;
+        }
+        .start-btn {
+            background: #4caf50;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 24px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.2s;
+            box-shadow: 0 0 8px rgba(76,175,80,0.5);
+        }
+        .start-btn:hover {
+            background: #45a049;
+            transform: scale(1.02);
+        }
+        .record-container {
+            position: absolute;
+            bottom: 140px;
+            left: 20px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            max-width: 700px;
+            pointer-events: auto;
+            z-index: 15;
+        }
+        .record-table {
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(4px);
+            border-radius: 12px;
+            padding: 10px;
+            width: 320px;
+            font-size: 11px;
+            max-height: 280px;
+            overflow-y: auto;
+            border: 1px solid #ffaa66;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .record-table h4 {
+            margin: 0 0 8px 0;
+            text-align: center;
+            color: #ffaa66;
+            font-size: 13px;
+        }
+        .record-table table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #eee;
+        }
+        .record-table th, .record-table td {
+            border: 1px solid #888;
+            padding: 5px 3px;
+            text-align: center;
+        }
+        .record-table th {
+            background: #ffaa3355;
+            font-size: 10px;
+        }
+        .btn-record {
+            margin-top: 8px;
+            background: #2c7da0;
+            border: none;
+            border-radius: 20px;
+            padding: 4px 10px;
+            color: white;
+            cursor: pointer;
+            font-size: 11px;
+            width: 100%;
+            transition: all 0.2s;
+        }
+        .btn-record:hover { background: #1f5e7e; }
+        .btn-clear {
+            margin-top: 5px;
+            background: #aa5544;
+            border: none;
+            border-radius: 20px;
+            padding: 4px 10px;
+            color: white;
+            cursor: pointer;
+            font-size: 11px;
+            width: 100%;
+        }
+        .btn-clear:hover { background: #884433; }
+        .btn-plot {
+            margin-top: 8px;
+            background: #6a4e9b;
+            border: none;
+            border-radius: 20px;
+            padding: 4px 10px;
+            color: white;
+            cursor: pointer;
+            font-size: 11px;
+            width: 100%;
+            transition: all 0.2s;
+        }
+        .btn-plot:hover { background: #5a3e8b; }
+        .status-badge {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: #000000aa;
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 10;
+        }
+        /* 绘图模态框 */
+        .plot-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(20, 20, 35, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 2px solid #ffaa66;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            z-index: 100;
+            display: none;
+            pointer-events: auto;
+        }
+        .plot-modal canvas {
+            background: #0a1a2a;
+            border-radius: 12px;
+            display: block;
+        }
+        .plot-modal .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: #aa5544;
+            border: none;
+            border-radius: 20px;
+            padding: 4px 12px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .plot-modal .close-btn:hover { background: #884433; }
+        .plot-modal h3 {
+            margin: 0 0 15px 0;
+            color: #ffaa66;
+            text-align: center;
+        }
+        @media (max-width: 900px) {
+            .top-bar { flex-direction: column; align-items: stretch; top: 10px; left: 10px; right: 10px; padding: 10px; }
+            .data-group { justify-content: space-between; }
+            .control-group-top { justify-content: space-between; flex-wrap: wrap; }
+            .record-container { bottom: 180px; left: 10px; flex-direction: column; gap: 10px; max-width: 300px; }
+            .record-table { width: 280px; max-height: 240px; }
+        }
+        button { cursor: pointer; }
+    </style>
+</head>
+<body>
+    <!-- 顶部栏：数据显示 + 实验控制 -->
+    <div class="top-bar">
+        <div class="data-group">
+            <div class="data-item">
+                <div class="label">📊 实时电压</div>
+                <div class="value" id="voltageValue">0.00 mV</div>
+            </div>
+            <div class="data-item">
+                <div class="label">📈 电压峰值</div>
+                <div class="value" id="peakVoltage">0.00 mV</div>
+            </div>
+            <div class="data-item">
+                <div class="label">🌀 磁通量变化率峰值</div>
+                <div class="value" id="peakFluxRate">0.0000 Wb/s</div>
+            </div>
+            <div class="data-item">
+                <div class="label">▶️ 运动状态</div>
+                <div class="value" id="moveState" style="color:#88ffaa;">等待释放</div>
+            </div>
+        </div>
+        <div class="control-group-top">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label>🔁 匝数 N:</label>
+                <input type="range" id="turnsSlider" min="50" max="500" step="10" value="200" style="width: 120px;">
+                <span id="turnsSliderVal" style="color:#ffaa66; min-width: 40px;">200</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label>⚡ 速度 v:</label>
+                <input type="range" id="speedSlider" min="0.5" max="2.8" step="0.02" value="1.20" style="width: 120px;">
+                <span id="speedSliderVal" style="color:#ffaa66; min-width: 45px;">1.20</span>
+            </div>
+            <button id="startReleaseBtn" class="start-btn">▶ 开始释放</button>
+        </div>
+    </div>
+
+    <!-- 双实验记录表 -->
+    <div class="record-container">
+        <!-- 表1：探究感应电动势与匝数的关系 -->
+        <div class="record-table">
+            <h4>📊 探究 E 与 N 的关系</h4>
+            <table id="tableTurns">
+                <thead>
+                    <tr><th>实验次数</th><th>匝数 N</th><th>磁铁速度 v (m/s)</th><th>最大电压 (mV)</th></tr>
+                </thead>
+                <tbody id="tableTurnsBody">
+                    <tr><td colspan="4">暂无数据</td></tr>
+                </tbody>
+            </table>
+            <button id="recordTurnsBtn" class="btn-record">📝 记录本次数据 (N关系)</button>
+            <button id="plotTurnsBtn" class="btn-plot">📈 点击绘制拟合直线 (U-N)</button>
+            <button id="clearTurnsBtn" class="btn-clear">🗑️ 清空记录</button>
+        </div>
+
+        <!-- 表2：探究感应电动势与磁通量变化率的关系 -->
+        <div class="record-table">
+            <h4>🌀 探究 E 与 dΦ/dt 的关系</h4>
+            <table id="tableFlux">
+                <thead>
+                    <tr><th>实验次数</th><th>匝数 N</th><th>|dΦ/dt|<sub>max</sub> (Wb/s)</th><th>最大电压 (mV)</th></tr>
+                </thead>
+                <tbody id="tableFluxBody">
+                    <tr><td colspan="4">暂无数据</td></tr>
+                </tbody>
+            </table>
+            <button id="recordFluxBtn" class="btn-record">📝 记录本次数据 (dΦ/dt关系)</button>
+            <button id="plotFluxBtn" class="btn-plot">📈 点击绘制拟合直线 (U-dΦ/dt)</button>
+            <button id="clearFluxBtn" class="btn-clear">🗑️ 清空记录</button>
+        </div>
+    </div>
+    <div class="status-badge" id="simStatus">⚙️ 仿真就绪 | 点击"开始释放"</div>
+
+    <!-- 绘图模态框 -->
+    <div id="plotModal" class="plot-modal">
+        <button class="close-btn" id="closeModalBtn">✕ 关闭</button>
+        <h3 id="modalTitle">电压特性曲线（线性拟合）</h3>
+        <canvas id="plotCanvas" width="600" height="400" style="width:600px; height:400px;"></canvas>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        // --- 初始化场景 ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050b1a);
+        scene.fog = new THREE.FogExp2(0x050b1a, 0.008);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(5.8, 3.5, 7.8);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.left = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(labelRenderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = false;
+        controls.enableZoom = true;
+        controls.zoomSpeed = 1.2;
+        controls.target.set(0, 0, 0);
+
+        // 灯光
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(2, 5, 3);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+        const backLight = new THREE.PointLight(0x556688, 0.5);
+        backLight.position.set(-2, 1, -3);
+        scene.add(backLight);
+        const fillLight = new THREE.PointLight(0xaa8866, 0.4);
+        fillLight.position.set(1, 2, 2);
+        scene.add(fillLight);
+        
+        const gridHelper = new THREE.GridHelper(14, 24, 0x88aaff, 0x335588);
+        gridHelper.position.y = -1.6;
+        scene.add(gridHelper);
+        
+        // ========= 真实螺旋线圈 =========
+        const coilGroup = new THREE.Group();
+        scene.add(coilGroup);
+        let currentCoilMesh = null;
+        let coilEndPoints = { top: null, bottom: null };
+        
+        function createRealisticCoil(turns) {
+            if (currentCoilMesh) {
+                coilGroup.remove(currentCoilMesh);
+                if (currentCoilMesh.geometry) currentCoilMesh.geometry.dispose();
+                if (currentCoilMesh.material) currentCoilMesh.material.dispose();
+            }
+            
+            const radius = 1.1;
+            const height = 1.2;
+            const wireRadius = 0.045;
+            let visualCoils = Math.floor(turns / 22);
+            visualCoils = Math.min(22, Math.max(4, visualCoils));
+            
+            const startY = -height/2;
+            const endY = height/2;
+            const totalAngle = visualCoils * Math.PI * 2;
+            const segments = Math.max(200, visualCoils * 40);
+            const points = [];
+            
+            for (let i = 0; i <= segments; i++) {
+                const t = i / segments;
+                const y = startY + t * height;
+                const angle = t * totalAngle;
+                const x = radius * Math.cos(angle);
+                const z = radius * Math.sin(angle);
+                points.push(new THREE.Vector3(x, y, z));
+            }
+            
+            const curve = new THREE.CatmullRomCurve3(points);
+            const tubeGeo = new THREE.TubeGeometry(curve, segments * 2, wireRadius, 12, false);
+            const wireMaterial = new THREE.MeshStandardMaterial({
+                color: 0xdd9933,
+                metalness: 0.85,
+                roughness: 0.35,
+                emissive: 0x442200,
+                emissiveIntensity: 0.15
+            });
+            const tubeMesh = new THREE.Mesh(tubeGeo, wireMaterial);
+            tubeMesh.castShadow = true;
+            coilGroup.add(tubeMesh);
+            currentCoilMesh = tubeMesh;
+            
+            const topEndPos = points[points.length-1].clone();
+            const bottomStartPos = points[0].clone();
+            coilEndPoints.top = topEndPos.clone();
+            coilEndPoints.bottom = bottomStartPos.clone();
+            
+            const contactMat = new THREE.MeshStandardMaterial({ color: 0xffaa66, metalness: 0.95, emissive: 0x552200 });
+            const topContact = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 12), contactMat);
+            topContact.position.copy(coilEndPoints.top);
+            const bottomContact = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 12), contactMat);
+            bottomContact.position.copy(coilEndPoints.bottom);
+            
+            if (coilGroup.userData.topContact) coilGroup.remove(coilGroup.userData.topContact);
+            if (coilGroup.userData.bottomContact) coilGroup.remove(coilGroup.userData.bottomContact);
+            coilGroup.add(topContact);
+            coilGroup.add(bottomContact);
+            coilGroup.userData.topContact = topContact;
+            coilGroup.userData.bottomContact = bottomContact;
+            
+            return { topPos: coilEndPoints.top.clone(), bottomPos: coilEndPoints.bottom.clone() };
+        }
+        
+        // --- 红蓝条形磁铁 ---
+        const magnetGroup = new THREE.Group();
+        scene.add(magnetGroup);
+        const magnetHeight = 1.0;
+        const magnetRadius = 0.55;
+        const redMat = new THREE.MeshStandardMaterial({ color: 0xcc3333, metalness: 0.3, roughness: 0.4, emissive: 0x330000 });
+        const blueMat = new THREE.MeshStandardMaterial({ color: 0x3399ff, metalness: 0.2, roughness: 0.5, emissive: 0x002244 });
+        
+        const topPart = new THREE.Mesh(new THREE.CylinderGeometry(magnetRadius, magnetRadius, magnetHeight/2, 32), redMat);
+        topPart.position.y = magnetHeight/4;
+        topPart.castShadow = true;
+        const bottomPart = new THREE.Mesh(new THREE.CylinderGeometry(magnetRadius, magnetRadius, magnetHeight/2, 32), blueMat);
+        bottomPart.position.y = -magnetHeight/4;
+        bottomPart.castShadow = true;
+        
+        magnetGroup.add(topPart);
+        magnetGroup.add(bottomPart);
+        const magnetGlow = new THREE.PointLight(0xff6644, 0.4, 2.5);
+        magnetGroup.add(magnetGlow);
+        
+        // --- 导线组 ---
+        let wireGroup = new THREE.Group();
+        scene.add(wireGroup);
+        let currentWires = { topWire: null, bottomWire: null };
+        
+        // --- 电压表 ---
+        const voltMeterGroup = new THREE.Group();
+        scene.add(voltMeterGroup);
+        let voltCSSDisplay = null;
+        
+        function createVoltmeter() {
+            const meterWidth = 1.5, meterHeight = 1.0, meterDepth = 0.2;
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x3a4a5a, metalness: 0.4, roughness: 0.5 });
+            const body = new THREE.Mesh(new THREE.BoxGeometry(meterWidth, meterHeight, meterDepth), bodyMat);
+            body.position.set(4.0, 0.8, 1.28);
+            body.castShadow = true;
+            voltMeterGroup.add(body);
+            
+            const edgeMat = new THREE.MeshStandardMaterial({ color: 0xccccdd, metalness: 0.7 });
+            const topEdge = new THREE.Mesh(new THREE.BoxGeometry(meterWidth + 0.05, 0.05, meterDepth + 0.02), edgeMat);
+            topEdge.position.set(4.0, 1.3, 1.28);
+            const bottomEdge = new THREE.Mesh(new THREE.BoxGeometry(meterWidth + 0.05, 0.05, meterDepth + 0.02), edgeMat);
+            bottomEdge.position.set(4.0, 0.3, 1.28);
+            const leftEdge = new THREE.Mesh(new THREE.BoxGeometry(0.05, meterHeight, meterDepth + 0.02), edgeMat);
+            leftEdge.position.set(3.25, 0.8, 1.28);
+            const rightEdge = new THREE.Mesh(new THREE.BoxGeometry(0.05, meterHeight, meterDepth + 0.02), edgeMat);
+            rightEdge.position.set(4.75, 0.8, 1.28);
+            voltMeterGroup.add(topEdge, bottomEdge, leftEdge, rightEdge);
+            
+            const screenMat = new THREE.MeshStandardMaterial({ color: 0x0a1a2a, metalness: 0.1 });
+            const screen = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.05), screenMat);
+            screen.position.set(4.0, 0.85, 1.37);
+            voltMeterGroup.add(screen);
+            
+            const voltDiv = document.createElement('div');
+            voltDiv.style.backgroundColor = '#0a1a2aee';
+            voltDiv.style.color = '#ffff88';
+            voltDiv.style.fontSize = '38px';
+            voltDiv.style.fontWeight = 'bold';
+            voltDiv.style.fontFamily = 'monospace';
+            voltDiv.style.padding = '12px 20px';
+            voltDiv.style.borderRadius = '8px';
+            voltDiv.style.border = '2px solid #ffaa66';
+            voltDiv.style.textAlign = 'center';
+            voltDiv.innerHTML = `0.0<br><span style="font-size:14px;">mV</span>`;
+            const voltCSS = new CSS2DObject(voltDiv);
+            voltCSS.position.set(4.0, 0.82, 1.42);
+            voltMeterGroup.add(voltCSS);
+            
+            const terminalMat = new THREE.MeshStandardMaterial({ color: 0xdd8844, metalness: 0.85 });
+            const leftTerminal = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.35, 12), terminalMat);
+            leftTerminal.position.set(3.85, 0.28, 1.33);
+            const rightTerminal = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.35, 12), terminalMat);
+            rightTerminal.position.set(4.15, 0.28, 1.33);
+            voltMeterGroup.add(leftTerminal, rightTerminal);
+            
+            const titleDiv = document.createElement('div');
+            titleDiv.textContent = 'V';
+            titleDiv.style.color = '#ffaa66';
+            titleDiv.style.fontSize = '18px';
+            titleDiv.style.fontWeight = 'bold';
+            titleDiv.style.backgroundColor = 'rgba(0,0,0,0.4)';
+            titleDiv.style.padding = '2px 10px';
+            titleDiv.style.borderRadius = '20px';
+            const titleCSS = new CSS2DObject(titleDiv);
+            titleCSS.position.set(4.0, 1.18, 1.3);
+            voltMeterGroup.add(titleCSS);
+            
+            return { voltCSS, leftTerminalPos: leftTerminal.position.clone(), rightTerminalPos: rightTerminal.position.clone() };
+        }
+        
+        const voltMeter = createVoltmeter();
+        voltCSSDisplay = voltMeter.voltCSS;
+        
+        function updateWires(topPos, bottomPos) {
+            if (currentWires.topWire) wireGroup.remove(currentWires.topWire);
+            if (currentWires.bottomWire) wireGroup.remove(currentWires.bottomWire);
+            if (wireGroup.userData.connectors) wireGroup.userData.connectors.forEach(c => wireGroup.remove(c));
+            
+            const wireMat = new THREE.MeshStandardMaterial({ color: 0xccaa77, metalness: 0.85, roughness: 0.3 });
+            const leftTermPos = voltMeter.leftTerminalPos;
+            const rightTermPos = voltMeter.rightTerminalPos;
+            
+            const topPoints = [topPos.clone(), new THREE.Vector3(topPos.x + 0.55, topPos.y + 0.12, topPos.z + 0.08), new THREE.Vector3(3.0, 0.78, 1.32), new THREE.Vector3(3.5, 0.48, 1.35), leftTermPos];
+            const topCurve = new THREE.CatmullRomCurve3(topPoints);
+            const topWire = new THREE.Mesh(new THREE.TubeGeometry(topCurve, 75, 0.048, 12, false), wireMat);
+            wireGroup.add(topWire);
+            currentWires.topWire = topWire;
+            
+            const bottomPoints = [bottomPos.clone(), new THREE.Vector3(bottomPos.x + 0.5, bottomPos.y - 0.1, bottomPos.z - 0.02), new THREE.Vector3(2.7, 0.22, 1.3), new THREE.Vector3(3.7, 0.38, 1.35), rightTermPos];
+            const bottomCurve = new THREE.CatmullRomCurve3(bottomPoints);
+            const bottomWire = new THREE.Mesh(new THREE.TubeGeometry(bottomCurve, 75, 0.048, 12, false), wireMat);
+            wireGroup.add(bottomWire);
+            currentWires.bottomWire = bottomWire;
+            
+            const contactMat = new THREE.MeshStandardMaterial({ color: 0xffaa66, metalness: 0.95, emissive: 0x442200 });
+            const topConnector = new THREE.Mesh(new THREE.SphereGeometry(0.085, 12, 12), contactMat);
+            topConnector.position.copy(topPos);
+            const bottomConnector = new THREE.Mesh(new THREE.SphereGeometry(0.085, 12, 12), contactMat);
+            bottomConnector.position.copy(bottomPos);
+            wireGroup.add(topConnector, bottomConnector);
+            
+            const termConnMat = new THREE.MeshStandardMaterial({ color: 0xdd8844, metalness: 0.75 });
+            const topTermConn = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), termConnMat);
+            topTermConn.position.copy(leftTermPos);
+            const bottomTermConn = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), termConnMat);
+            bottomTermConn.position.copy(rightTermPos);
+            wireGroup.add(topTermConn, bottomTermConn);
+            wireGroup.userData.connectors = [topConnector, bottomConnector, topTermConn, bottomTermConn];
+        }
+        
+        // 粒子特效
+        let particles = [];
+        const particleMatObj = new THREE.PointsMaterial({ color: 0x77aaff, size: 0.05 });
+        let particleSystem = new THREE.Points(new THREE.BufferGeometry(), particleMatObj);
+        scene.add(particleSystem);
+        function addSparkleEffect(pos) {
+            for(let i=0;i<5;i++) particles.push({ pos: pos.clone(), life: 0.5, vel: new THREE.Vector3((Math.random() - 0.5)*0.2, (Math.random() - 0.5)*0.2, (Math.random() - 0.5)*0.2) });
+        }
+        
+        // --- 物理仿真参数 ---
+        let magnetY = 2.4;
+        const START_Y = 2.4;
+        const END_Y = -2.0;
+        let isMoving = false;
+        let direction = -1;
+        let speed = 1.2;
+        let lastFrameTime = performance.now() / 1000;
+        
+        const phi0 = 0.028;
+        const sigma = 0.7;
+        function getFluxDerivative(y, vy) {
+            const dPhi_dy = -phi0 * (y / (sigma * sigma)) * Math.exp(-(y * y) / (2 * sigma * sigma));
+            return dPhi_dy * vy;
+        }
+        
+        let currentVoltage = 0, peakVoltage = 0, peakFluxRate = 0;
+        let currentTurns = 200;
+        
+        // 添加随机误差函数（±3%）
+        function addRandomError(value) {
+            if (value === 0) return 0;
+            const errorPercent = (Math.random() - 0.5) * 0.06; // -3% 到 +3%
+            return value * (1 + errorPercent);
+        }
+        
+        // UI 绑定
+        const voltageSpan = document.getElementById('voltageValue');
+        const peakVoltageSpan = document.getElementById('peakVoltage');
+        const peakFluxRateSpan = document.getElementById('peakFluxRate');
+        const moveStateSpan = document.getElementById('moveState');
+        const turnsSlider = document.getElementById('turnsSlider');
+        const speedSlider = document.getElementById('speedSlider');
+        const turnsValSpan = document.getElementById('turnsSliderVal');
+        const speedValSpan = document.getElementById('speedSliderVal');
+        const startReleaseBtn = document.getElementById('startReleaseBtn');
+        
+        // 表1记录
+        const recordTurnsBtn = document.getElementById('recordTurnsBtn');
+        const clearTurnsBtn = document.getElementById('clearTurnsBtn');
+        const plotTurnsBtn = document.getElementById('plotTurnsBtn');
+        const tableTurnsBody = document.getElementById('tableTurnsBody');
+        let turnsRecords = [];
+        
+        // 表2记录
+        const recordFluxBtn = document.getElementById('recordFluxBtn');
+        const clearFluxBtn = document.getElementById('clearFluxBtn');
+        const plotFluxBtn = document.getElementById('plotFluxBtn');
+        const tableFluxBody = document.getElementById('tableFluxBody');
+        let fluxRecords = [];
+        
+        // 绘图相关
+        const modal = document.getElementById('plotModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const modalTitle = document.getElementById('modalTitle');
+        const plotCanvas = document.getElementById('plotCanvas');
+        const ctx = plotCanvas.getContext('2d');
+        
+        function showModal(title) { modalTitle.innerText = title; modal.style.display = 'block'; }
+        function hideModal() { modal.style.display = 'none'; }
+        closeModalBtn.addEventListener('click', hideModal);
+        
+        // 线性回归计算斜率与截距
+        function linearRegression(xData, yData) {
+            const n = xData.length;
+            if (n < 2) return null;
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+            for (let i = 0; i < n; i++) {
+                sumX += xData[i];
+                sumY += yData[i];
+                sumXY += xData[i] * yData[i];
+                sumX2 += xData[i] * xData[i];
+            }
+            const denominator = n * sumX2 - sumX * sumX;
+            if (Math.abs(denominator) < 1e-6) return null;
+            const slope = (n * sumXY - sumX * sumY) / denominator;
+            const intercept = (sumY - slope * sumX) / n;
+            return { slope, intercept };
+        }
+        
+        function drawLinearFitPlot(xData, yData, xLabel, yLabel, title, useScale = false) {
+            if (xData.length === 0) {
+                alert('没有数据可绘制，请先记录实验数据！');
+                return;
+            }
+            
+            let scaledXData = [...xData];
+            let xLabelDisplay = xLabel;
+            if (useScale) {
+                scaledXData = xData.map(v => v * 100);
+                xLabelDisplay = `${xLabel} (×10⁻²)`;
+            }
+            
+            showModal(title);
+            const w = plotCanvas.width, h = plotCanvas.height;
+            ctx.fillStyle = '#0a1a2a';
+            ctx.fillRect(0, 0, w, h);
+            
+            // 数据范围（包含原点）
+            let minX = Math.min(0, ...scaledXData);
+            let maxX = Math.max(...scaledXData);
+            let minY = Math.min(0, ...yData);
+            let maxY = Math.max(...yData);
+            
+            // 线性拟合
+            const reg = linearRegression(scaledXData, yData);
+            
+            // 添加边距
+            const xRange = maxX - minX;
+            const yRange = maxY - minY;
+            if (xRange > 0) {
+                minX = minX - xRange * 0.08;
+                maxX = maxX + xRange * 0.08;
+            } else {
+                minX = -1;
+                maxX = 1;
+            }
+            if (yRange > 0) {
+                minY = minY - yRange * 0.08;
+                maxY = maxY + yRange * 0.08;
+            } else {
+                minY = -1;
+                maxY = 1;
+            }
+            minX = Math.min(minX, 0);
+            maxX = Math.max(maxX, 0);
+            minY = Math.min(minY, 0);
+            maxY = Math.max(maxY, 0);
+            
+            const padding = 50;
+            const plotW = w - 2 * padding;
+            const plotH = h - 2 * padding;
+            
+            function mapX(x) { return padding + (x - minX) / (maxX - minX) * plotW; }
+            function mapY(y) { return h - padding - (y - minY) / (maxY - minY) * plotH; }
+            
+            const originX = mapX(0);
+            const originY = mapY(0);
+            
+            // 绘制坐标轴
+            ctx.beginPath();
+            ctx.strokeStyle = '#88aaff';
+            ctx.lineWidth = 2;
+            ctx.moveTo(padding, originY);
+            ctx.lineTo(w - padding, originY);
+            ctx.moveTo(originX, padding);
+            ctx.lineTo(originX, h - padding);
+            ctx.stroke();
+            
+            // 绘制箭头
+            ctx.fillStyle = '#88aaff';
+            ctx.beginPath();
+            ctx.moveTo(w - padding - 8, originY - 4);
+            ctx.lineTo(w - padding, originY);
+            ctx.lineTo(w - padding - 8, originY + 4);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(originX - 4, padding + 8);
+            ctx.lineTo(originX, padding);
+            ctx.lineTo(originX + 4, padding + 8);
+            ctx.fill();
+            
+            // X轴刻度
+            ctx.fillStyle = '#ccccdd';
+            ctx.font = '10px monospace';
+            const xStep = (maxX - minX) / 10;
+            for (let x = Math.ceil(minX / xStep) * xStep; x <= maxX; x += xStep) {
+                if (Math.abs(x) < 0.001) continue;
+                const xPos = mapX(x);
+                if (xPos >= padding && xPos <= w - padding) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#335588';
+                    ctx.moveTo(xPos, originY - 4);
+                    ctx.lineTo(xPos, originY + 4);
+                    ctx.stroke();
+                    ctx.fillText(x.toFixed(2), xPos - 12, originY + 15);
+                }
+            }
+            ctx.fillStyle = '#ffaa66';
+            ctx.fillText('0', originX - 12, originY + 4);
+            
+            // Y轴刻度
+            const yStep = (maxY - minY) / 10;
+            for (let y = Math.ceil(minY / yStep) * yStep; y <= maxY; y += yStep) {
+                if (Math.abs(y) < 0.001) continue;
+                const yPos = mapY(y);
+                if (yPos >= padding && yPos <= h - padding) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#335588';
+                    ctx.moveTo(originX - 4, yPos);
+                    ctx.lineTo(originX + 4, yPos);
+                    ctx.stroke();
+                    ctx.fillText(y.toFixed(1), originX - 30, yPos + 3);
+                }
+            }
+            
+            // 轴标签
+            ctx.fillStyle = '#ffaa66';
+            ctx.font = '12px monospace';
+            ctx.fillText(xLabelDisplay, w - padding + 10, originY + 5);
+            ctx.save();
+            ctx.translate(originX - 30, padding);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(yLabel, 0, 0);
+            ctx.restore();
+            
+            // 绘制拟合直线（延长至坐标轴）
+            if (reg) {
+                const { slope, intercept } = reg;
+                // 计算直线在绘图范围内的两端点
+                let xStart = minX;
+                let xEnd = maxX;
+                const yStart = slope * xStart + intercept;
+                const yEnd = slope * xEnd + intercept;
+                const startPx = mapX(xStart);
+                const startPy = mapY(yStart);
+                const endPx = mapX(xEnd);
+                const endPy = mapY(yEnd);
+                
+                ctx.beginPath();
+                ctx.strokeStyle = '#ffaa88';
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([10, 5]);
+                ctx.moveTo(startPx, startPy);
+                ctx.lineTo(endPx, endPy);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // 显示拟合方程
+                ctx.fillStyle = '#ffaa88';
+                ctx.font = '11px monospace';
+                ctx.fillText(`拟合: U = ${slope.toFixed(3)}·x + ${intercept.toFixed(2)}`, padding + 10, padding + 20);
+            }
+            
+            // 绘制数据点（不连线，只画点）
+            for (let i = 0; i < scaledXData.length; i++) {
+                let x = mapX(scaledXData[i]);
+                let y = mapY(yData[i]);
+                ctx.fillStyle = '#ff8866';
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px monospace';
+                let xDisplay = useScale ? (scaledXData[i] / 100).toFixed(4) : scaledXData[i].toFixed(0);
+                ctx.fillText(`(${xDisplay}, ${yData[i].toFixed(1)})`, x + 6, y - 6);
+            }
+        }
+        
+        function updateTurnsTable() {
+            if (turnsRecords.length === 0) {
+                tableTurnsBody.innerHTML = '<tr><td colspan="4">暂无数据</td></tr>';
+                return;
+            }
+            let html = '';
+            turnsRecords.forEach((rec, idx) => {
+                html += `<tr>
+                            <td>${idx + 1}</td>
+                            <td>${rec.turns}</td>
+                            <td>${rec.speed.toFixed(2)}</td>
+                            <td>${rec.voltage.toFixed(2)}</td>
+                         </tr>`;
+            });
+            tableTurnsBody.innerHTML = html;
+        }
+        
+        function updateFluxTable() {
+            if (fluxRecords.length === 0) {
+                tableFluxBody.innerHTML = '<tr><td colspan="4">暂无数据</td></tr>';
+                return;
+            }
+            let html = '';
+            fluxRecords.forEach((rec, idx) => {
+                html += `<tr>
+                            <td>${idx + 1}</td>
+                            <td>${rec.turns}</td>
+                            <td>${rec.fluxRate.toFixed(4)}</td>
+                            <td>${rec.voltage.toFixed(2)}</td>
+                         </tr>`;
+            });
+            tableFluxBody.innerHTML = html;
+        }
+        
+        recordTurnsBtn.addEventListener('click', () => {
+            if (peakVoltage > 0) {
+                const measuredVoltage = addRandomError(peakVoltage);
+                turnsRecords.push({ turns: currentTurns, speed: speed, voltage: measuredVoltage });
+                updateTurnsTable();
+                document.getElementById('simStatus').style.color = '#88ffaa';
+                document.getElementById('simStatus').textContent = '✅ 数据已记录到"E与N关系"表 (含±3%误差)';
+                setTimeout(()=>{ if(!isMoving) document.getElementById('simStatus').textContent = '⚙️ 仿真就绪 | 点击"开始释放"'; }, 1500);
+            } else {
+                document.getElementById('simStatus').style.color = '#ffaa66';
+                document.getElementById('simStatus').textContent = '⚠️ 无有效峰值，请先释放磁铁完成一次通过';
+            }
+        });
+        
+        clearTurnsBtn.addEventListener('click', () => { turnsRecords = []; updateTurnsTable(); });
+        
+        plotTurnsBtn.addEventListener('click', () => {
+            if (turnsRecords.length === 0) {
+                alert('没有数据可绘制，请先记录实验数据！');
+                return;
+            }
+            const xData = turnsRecords.map(r => r.turns);
+            const yData = turnsRecords.map(r => r.voltage);
+            drawLinearFitPlot(xData, yData, '匝数 N', '最大电压 (mV)', 'E 与 N 关系曲线 (线性拟合)', false);
+        });
+        
+        recordFluxBtn.addEventListener('click', () => {
+            if (peakVoltage > 0) {
+                const measuredVoltage = addRandomError(peakVoltage);
+                fluxRecords.push({ turns: currentTurns, fluxRate: peakFluxRate, voltage: measuredVoltage });
+                updateFluxTable();
+                document.getElementById('simStatus').style.color = '#88ffaa';
+                document.getElementById('simStatus').textContent = '✅ 数据已记录到"E与dΦ/dt关系"表 (含±3%误差)';
+                setTimeout(()=>{ if(!isMoving) document.getElementById('simStatus').textContent = '⚙️ 仿真就绪 | 点击"开始释放"'; }, 1500);
+            } else {
+                document.getElementById('simStatus').style.color = '#ffaa66';
+                document.getElementById('simStatus').textContent = '⚠️ 无有效峰值，请先释放磁铁完成一次通过';
+            }
+        });
+        
+        clearFluxBtn.addEventListener('click', () => { fluxRecords = []; updateFluxTable(); });
+        
+        plotFluxBtn.addEventListener('click', () => {
+            if (fluxRecords.length === 0) {
+                alert('没有数据可绘制，请先记录实验数据！');
+                return;
+            }
+            const xData = fluxRecords.map(r => r.fluxRate);
+            const yData = fluxRecords.map(r => r.voltage);
+            drawLinearFitPlot(xData, yData, '|dΦ/dt| (Wb/s)', '最大电压 (mV)', 'E 与 dΦ/dt 关系曲线 (线性拟合)', true);
+        });
+        
+        function updateCoilAndWires() {
+            const termPositions = createRealisticCoil(currentTurns);
+            if (termPositions) updateWires(termPositions.topPos, termPositions.bottomPos);
+        }
+        
+        function updateParametersUI() {
+            if(!isMoving) {
+                currentTurns = parseInt(turnsSlider.value);
+                speed = parseFloat(speedSlider.value);
+                turnsValSpan.innerText = currentTurns;
+                speedValSpan.innerText = speed.toFixed(2);
+                updateCoilAndWires();
+            }
+        }
+        
+        turnsSlider.addEventListener('input', (e) => {
+            if(!isMoving) {
+                currentTurns = parseInt(e.target.value);
+                turnsValSpan.innerText = currentTurns;
+                updateCoilAndWires();
+            }
+        });
+        speedSlider.addEventListener('input', (e) => {
+            if(!isMoving) {
+                speed = parseFloat(e.target.value);
+                speedValSpan.innerText = speed.toFixed(2);
+            }
+        });
+        
+        startReleaseBtn.addEventListener('click', () => {
+            if(isMoving) return;
+            magnetY = START_Y;
+            magnetGroup.position.y = magnetY;
+            isMoving = true;
+            direction = -1;
+            peakVoltage = 0;
+            peakFluxRate = 0;
+            peakVoltageSpan.innerText = '0.00 mV';
+            peakFluxRateSpan.innerText = '0.0000 Wb/s';
+            currentVoltage = 0;
+            voltageSpan.innerText = '0.00 mV';
+            if (voltCSSDisplay) voltCSSDisplay.element.innerHTML = `0.0<br><span style="font-size:14px;">mV</span>`;
+            moveStateSpan.innerText = '向下通过中 (长行程)';
+            moveStateSpan.style.color = '#88ffaa';
+            document.getElementById('simStatus').textContent = '🔽 磁铁长距离下落通过线圈...';
+            particles = [];
+            turnsSlider.disabled = true;
+            speedSlider.disabled = true;
+        });
+        
+        function animatePhysics() {
+            const now = performance.now() / 1000;
+            let delta = Math.min(0.033, now - lastFrameTime);
+            if(delta <= 0) delta = 0.016;
+            lastFrameTime = now;
+            
+            if(isMoving) {
+                const step = speed * delta;
+                magnetY += direction * step;
+                if(magnetY <= END_Y) {
+                    magnetY = END_Y;
+                    isMoving = false;
+                    moveStateSpan.innerText = '已通过底部 (停止)';
+                    moveStateSpan.style.color = '#ffaa66';
+                    document.getElementById('simStatus').textContent = '⏹️ 磁铁已完成长行程通过 | 可调整参数后重新释放';
+                    turnsSlider.disabled = false;
+                    speedSlider.disabled = false;
+                    addSparkleEffect(new THREE.Vector3(0, -1.5, 0.6));
+                }
+                magnetGroup.position.y = magnetY;
+                magnetGlow.intensity = 0.4 + speed * 0.25;
+                
+                const vy = direction * speed;
+                const fluxDeriv = getFluxDerivative(magnetY, vy);
+                let voltage_mV = -currentTurns * fluxDeriv * 1000;
+                currentVoltage = voltage_mV;
+                voltageSpan.innerText = currentVoltage.toFixed(2) + " mV";
+                if (voltCSSDisplay) voltCSSDisplay.element.innerHTML = `${currentVoltage.toFixed(1)}<br><span style="font-size:14px;">mV</span>`;
+                
+                const absVoltage = Math.abs(currentVoltage);
+                if(absVoltage > peakVoltage) { peakVoltage = absVoltage; peakVoltageSpan.innerText = peakVoltage.toFixed(2) + " mV"; }
+                const absFluxRate = Math.abs(fluxDeriv);
+                if(absFluxRate > peakFluxRate) { peakFluxRate = absFluxRate; peakFluxRateSpan.innerText = peakFluxRate.toFixed(4) + " Wb/s"; }
+                
+                if(Math.abs(currentVoltage) > 12 && Math.random() < 0.35) {
+                    addSparkleEffect(new THREE.Vector3((Math.random()-0.5)*2.2, magnetY + (Math.random()-0.5)*0.8, (Math.random()-0.5)*1.8));
+                }
+            } else {
+                currentVoltage = 0;
+                voltageSpan.innerText = '0.00 mV';
+                if (voltCSSDisplay) voltCSSDisplay.element.innerHTML = `0.0<br><span style="font-size:14px;">mV</span>`;
+                magnetGlow.intensity = 0.2;
+            }
+            
+            for(let i=particles.length-1; i>=0; i--) {
+                particles[i].life -= delta;
+                if(particles[i].life <= 0) { particles.splice(i,1); continue; }
+                particles[i].pos.addScaledVector(particles[i].vel, delta);
+            }
+            const particlePositions = [];
+            particles.forEach(p => particlePositions.push(p.pos.x, p.pos.y, p.pos.z));
+            const particleBufferGeo = new THREE.BufferGeometry();
+            particleBufferGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(particlePositions), 3));
+            if(particleSystem.geometry) particleSystem.geometry.dispose();
+            particleSystem.geometry = particleBufferGeo;
+        }
+        
+        updateCoilAndWires();
+        
+        function renderLoop() {
+            animatePhysics();
+            controls.update();
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+            requestAnimationFrame(renderLoop);
+        }
+        
+        lastFrameTime = performance.now() / 1000;
+        renderLoop();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        const starField = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ color: 0x88aaff, size: 0.03 }));
+        const starPos = [];
+        for(let i=0;i<1200;i++) starPos.push((Math.random()-0.5)*200, (Math.random()-0.5)*100, (Math.random()-0.5)*80 - 40);
+        starField.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(starPos), 3));
+        scene.add(starField);
+        
+        console.log('3D仿真实验: 顶部数据显示 + 双实验记录表 + 线性拟合图像（±3%误差）');
+    </script>
+</body>
+</html>

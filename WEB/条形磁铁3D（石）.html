@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 条形磁铁磁感线 - 移动磁铁版</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #111;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            pointer-events: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
+        p {
+            margin: 0;
+            font-size: 14px;
+            color: #ccc;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            transition: opacity 0.5s;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <!-- 磁通量仪表盘 -->
+    <div id="flux-panel" style="position: absolute; left: 20px; top: 20px; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; color: white; pointer-events: none; text-align: center; font-family: 'Segoe UI', sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <h3 style="margin: 0 0 10px 0; font-size: 16px; letter-spacing: 1px;">穿过圆环的磁通量 (Φ)</h3>
+        <div style="font-size: 22px; font-weight: bold; margin-bottom: 12px; font-family: monospace; color: #00e5ff;" id="flux-value">0.00 Wb</div>
+        
+        <!-- 进度条指示器 -->
+        <div style="width: 24px; height: 160px; background: #222; position: relative; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 1px solid #555;">
+            <div id="flux-bar" style="position: absolute; bottom: 50%; left: 0; width: 100%; height: 0%; background: #e53935; transition: height 0.1s, background-color 0.1s;"></div>
+            <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: #fff; z-index: 2;"></div>
+        </div>
+        
+        <p style="margin: 20px 0 10px 0; font-size: 13px; color: #ddd; font-weight: bold;">🖱️ 按住磁铁上下拖动</p>
+        <p style="margin: 0; font-size: 12px; color: #aaa;">✨ 环固定在中心，磁感线随磁铁移动</p>
+    </div>
+    
+    <div id="loading" class="loading">正在生成物理系统...</div>
+    <div id="canvas-container"></div>
+
+    <script>
+        const container = document.getElementById('canvas-container');
+        const loading = document.getElementById('loading');
+        
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0a1a);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // 拉远相机视角，并将相机稍微放低，以便看到更全面的交互过程
+        camera.position.set(28, 5, 45);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        // 将镜头的注视中心点往下移，使其位于磁铁初始位置和圆环之间
+        controls.target.set(0, -4, 0); 
+        controls.update();
+
+        // 光照
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // 标签纹理
+        function createLabelTexture(text, bgColor) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, 256, 256);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 160px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 128, 140);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        const texN = createLabelTexture('N', '#e53935');
+        const texS = createLabelTexture('S', '#1e88e5');
+
+        // === 磁铁系统组 (包含磁铁和磁感线) ===
+        const magnetSystem = new THREE.Group();
+        scene.add(magnetSystem);
+
+        const mWidth = 2.4, mHeight = 10, mDepth = 2.4;
+        const magnetGroup = new THREE.Group();
+        magnetSystem.add(magnetGroup);
+        
+        const matN = [
+            new THREE.MeshStandardMaterial({ color: 0xe53935 }),
+            new THREE.MeshStandardMaterial({ color: 0xe53935 }),
+            new THREE.MeshStandardMaterial({ color: 0xe53935 }), 
+            new THREE.MeshStandardMaterial({ color: 0xe53935 }),
+            new THREE.MeshStandardMaterial({ map: texN }),
+            new THREE.MeshStandardMaterial({ map: texN })
+        ];
+        const meshN = new THREE.Mesh(new THREE.BoxGeometry(mWidth, mHeight/2, mDepth), matN);
+        meshN.position.y = mHeight/4;
+        magnetGroup.add(meshN);
+
+        const matS = [
+            new THREE.MeshStandardMaterial({ color: 0x1e88e5 }),
+            new THREE.MeshStandardMaterial({ color: 0x1e88e5 }),
+            new THREE.MeshStandardMaterial({ color: 0x1e88e5 }),
+            new THREE.MeshStandardMaterial({ color: 0x1e88e5 }), 
+            new THREE.MeshStandardMaterial({ map: texS }),
+            new THREE.MeshStandardMaterial({ map: texS })
+        ];
+        const meshS = new THREE.Mesh(new THREE.BoxGeometry(mWidth, mHeight/2, mDepth), matS);
+        meshS.position.y = -mHeight/4;
+        magnetGroup.add(meshS);
+
+        // 物理参数 (相对于磁铁中心)
+        const poleN = new THREE.Vector3(0, mHeight/2 - 0.2, 0);
+        const poleS = new THREE.Vector3(0, -(mHeight/2 - 0.2), 0);
+
+        function getMagneticField(pos) {
+            const rN = new THREE.Vector3().subVectors(pos, poleN);
+            const rS = new THREE.Vector3().subVectors(pos, poleS);
+            const dN = rN.length(), dS = rS.length();
+            if (dN < 0.1 || dS < 0.1) return new THREE.Vector3(0, 0, 0);
+            const BN = rN.normalize().multiplyScalar(1 / (dN * dN));
+            const BS = rS.normalize().multiplyScalar(-1 / (dS * dS));
+            return BN.add(BS);
+        }
+
+        const lineMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.5 });
+        const arrowGeo = new THREE.ConeGeometry(0.1, 0.25, 8);
+        arrowGeo.rotateX(Math.PI / 2);
+
+        const allFieldPaths = [];
+
+        // ==========================================
+        // === 固定的探测圆环 ===
+        // ==========================================
+        const ringRadius = 3.2; 
+        const ringGroup = new THREE.Group();
+        ringGroup.position.set(0, -11, 0); // 线圈位置放置在磁铁块下方较远处
+        scene.add(ringGroup);
+        
+        const ringGeo = new THREE.TorusGeometry(ringRadius, 0.12, 16, 64);
+        const ringMat = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.3, metalness: 0.9 });
+        const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+        ringMesh.rotation.x = Math.PI / 2;
+        ringGroup.add(ringMesh);
+
+        const areaGeo = new THREE.CircleGeometry(ringRadius - 0.05, 32);
+        const areaMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1, side: THREE.DoubleSide });
+        const areaMesh = new THREE.Mesh(areaGeo, areaMat);
+        areaMesh.rotation.x = Math.PI / 2;
+        ringGroup.add(areaMesh);
+
+        // 亮点交点指示器池 (固定在圆环坐标系下)
+        const intersectionGroup = new THREE.Group();
+        ringGroup.add(intersectionGroup);
+        const markerPool = [];
+        const markerGeo = new THREE.SphereGeometry(0.08, 8, 8);
+        const markerMat = new THREE.MeshBasicMaterial({ color: 0xffff00 }); 
+        
+        for (let i = 0; i < 200; i++) {
+            const marker = new THREE.Mesh(markerGeo, markerMat);
+            marker.visible = false;
+            intersectionGroup.add(marker);
+            markerPool.push(marker);
+        }
+
+        // 计算交点 (考虑磁铁系统移动)
+        function updateIntersections() {
+            if (allFieldPaths.length === 0) return;
+            for (let i = 0; i < markerPool.length; i++) markerPool[i].visible = false;
+            
+            let markerIdx = 0;
+            const my = magnetSystem.position.y;
+            const ry = ringGroup.position.y; // -11
+            const rSq = ringRadius * ringRadius;
+
+            allFieldPaths.forEach(path => {
+                for (let i = 0; i < path.length - 1; i++) {
+                    // 世界坐标 Y = 本地坐标 Y + 磁铁系统 Y
+                    const p1y = path[i].y + my;
+                    const p2y = path[i+1].y + my;
+
+                    if ((p1y >= ry && p2y <= ry) || (p1y <= ry && p2y >= ry)) {
+                        const dy = p2y - p1y;
+                        let t = 0;
+                        if (Math.abs(dy) > 1e-6) t = (ry - p1y) / dy; 
+
+                        const ix = path[i].x + t * (path[i+1].x - path[i].x);
+                        const iz = path[i].z + t * (path[i+1].z - path[i].z);
+
+                        if (ix * ix + iz * iz <= rSq) {
+                            if (markerIdx < markerPool.length) {
+                                const marker = markerPool[markerIdx];
+                                marker.position.set(ix, 0, iz); 
+                                marker.visible = true;
+                                markerIdx++;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 磁通量计算 (基于磁铁相对位置)
+        function calculateFlux(overrideRelativeY = null) {
+            // 计算相对位置：当磁铁在 my，圆环在 ry 时，相当于圆环在 (ry - my) 的位置观察固定在 0 的磁铁
+            const relativeY = overrideRelativeY !== null ? overrideRelativeY : (ringGroup.position.y - magnetSystem.position.y);
+            let totalBy = 0;
+            let samples = 0;
+            const rings = 6; 
+            for (let r = 0; r <= ringRadius; r += ringRadius/rings) {
+                const steps = r === 0 ? 1 : Math.round(r * 8);
+                for (let i = 0; i < steps; i++) {
+                    const angle = (i / steps) * Math.PI * 2;
+                    const p = new THREE.Vector3(r * Math.cos(angle), relativeY, r * Math.sin(angle));
+                    const B = getMagneticField(p);
+                    totalBy += B.y; 
+                    samples++;
+                }
+            }
+            const avgBy = totalBy / samples;
+            const area = Math.PI * ringRadius * ringRadius;
+            return avgBy * area;
+        }
+
+        const maxFlux = Math.abs(calculateFlux(4.8)); // 固定在靠近磁极的位置计算最大基准值，保证进度条比例正确
+        const fluxValueEl = document.getElementById('flux-value');
+        const fluxBarEl = document.getElementById('flux-bar');
+
+        function updateFluxUI() {
+            const flux = calculateFlux();
+            fluxValueEl.innerText = Math.abs(flux * 10).toFixed(2) + " Wb"; // 始终显示绝对值正数
+            
+            const percentage = Math.max(-100, Math.min(100, (flux / maxFlux) * 100));
+            if (percentage >= 0) {
+                fluxBarEl.style.bottom = '50%';
+                fluxBarEl.style.top = 'auto';
+                fluxBarEl.style.height = (percentage / 2) + '%';
+                fluxBarEl.style.backgroundColor = '#e53935'; 
+                areaMat.color.setHex(0xe53935);
+                areaMat.opacity = 0.1 + (percentage / 100) * 0.4;
+            } else {
+                fluxBarEl.style.top = '50%';
+                fluxBarEl.style.bottom = 'auto';
+                fluxBarEl.style.height = (Math.abs(percentage) / 2) + '%';
+                fluxBarEl.style.backgroundColor = '#1e88e5'; 
+                areaMat.color.setHex(0x1e88e5);
+                areaMat.opacity = 0.1 + (Math.abs(percentage) / 100) * 0.4;
+            }
+        }
+        
+        // 拖动逻辑 (操作对象改为磁铁)
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let isDragging = false;
+        let dragPlane = new THREE.Plane();
+        let dragOffset = new THREE.Vector3();
+
+        window.addEventListener('pointerdown', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            
+            // 检测是否点击到磁铁
+            const intersects = raycaster.intersectObjects(magnetGroup.children);
+            
+            if (intersects.length > 0) {
+                isDragging = true;
+                controls.enabled = false; 
+                dragPlane.setFromNormalAndCoplanarPoint(
+                    camera.getWorldDirection(new THREE.Vector3()).negate(), 
+                    magnetSystem.position
+                );
+                const intersectPoint = new THREE.Vector3();
+                raycaster.ray.intersectPlane(dragPlane, intersectPoint);
+                dragOffset.copy(magnetSystem.position).sub(intersectPoint);
+            }
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            
+            if (isDragging) {
+                document.body.style.cursor = 'grabbing';
+                raycaster.setFromCamera(mouse, camera);
+                const intersectPoint = new THREE.Vector3();
+                if (raycaster.ray.intersectPlane(dragPlane, intersectPoint)) {
+                    const newPos = intersectPoint.clone().add(dragOffset);
+                    
+                    // 放宽拖动的上下极限，以便让磁铁能够完全穿过圆环 (从 +/-15 改到了 +/-30)
+                    if (newPos.y > 30) newPos.y = 30;
+                    if (newPos.y < -30) newPos.y = -30;
+                    
+                    magnetSystem.position.y = newPos.y;
+                    
+                    updateFluxUI(); 
+                    updateIntersections(); 
+                }
+            } else {
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(magnetGroup.children);
+                document.body.style.cursor = intersects.length > 0 ? 'grab' : 'auto';
+            }
+        });
+
+        window.addEventListener('pointerup', () => {
+            isDragging = false;
+            controls.enabled = true; 
+            document.body.style.cursor = 'auto';
+        });
+
+        function generateFieldLines() {
+            const seedConfigs = [
+                { r: 0,    y: 5.1, count: 1, open: true, dir: 1 }, 
+                { r: 0.4,  y: 5.1, count: 6, open: true, dir: 1 },
+                { r: 0.7,  y: 5.1, count: 8, open: true, dir: 1 },
+                { r: 0,    y: -5.1, count: 1, open: true, dir: -1 },
+                { r: 0.4,  y: -5.1, count: 6, open: true, dir: -1 },
+                { r: 0.7,  y: -5.1, count: 8, open: true, dir: -1 },
+                { r: 1.1, y: 5.1, count: 8, open: false, dir: 1 },
+                { r: 1.5, y: 5.1, count: 10, open: false, dir: 1 },
+                { r: 2.0, y: 4.5, count: 10, open: false, dir: 1 },
+                { r: 1.8, y: 2.5, count: 8, open: false, dir: 1 },
+                { r: 1.1, y: -5.1, count: 8, open: false, dir: -1 },
+                { r: 1.5, y: -5.1, count: 10, open: false, dir: -1 },
+                { r: 2.0, y: -4.5, count: 10, open: false, dir: -1 },
+                { r: 1.8, y: -2.5, count: 8, open: false, dir: -1 }
+            ];
+
+            seedConfigs.forEach(config => {
+                for (let i = 0; i < config.count; i++) {
+                    const angle = (i / config.count) * Math.PI * 2;
+                    let current = new THREE.Vector3(config.r * Math.cos(angle), config.y, config.r * Math.sin(angle));
+                    const path = [current.clone()];
+                    
+                    const maxSteps = config.open ? 180 : 2500; 
+                    const stepSize = 0.2;
+
+                    for (let s = 0; s < maxSteps; s++) {
+                        const B = getMagneticField(current);
+                        if (B.lengthSq() < 0.0001) break;
+                        current.add(B.normalize().multiplyScalar(stepSize * config.dir));
+                        
+                        // 保持中心线笔直
+                        if (config.r === 0) {
+                            current.x = 0;
+                            current.z = 0;
+                        }
+
+                        path.push(current.clone());
+                        if (current.y < 4.9 && current.y > -4.9 && Math.abs(current.x) < 1.25 && Math.abs(current.z) < 1.25) {
+                            if (s > 15) break;
+                        }
+                        if (current.length() > (config.open ? 35 : 200)) break; 
+                    }
+
+                    if (path.length > 5) {
+                        allFieldPaths.push(path);
+                        if (config.dir === -1) path.reverse();
+                        
+                        const curve = new THREE.CatmullRomCurve3(path);
+                        const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, path.length, 0.035, 6, false), lineMat);
+                        magnetSystem.add(tube); // 添加到磁铁系统组
+
+                        const arrowPositions = config.open || path.length < 60 ? [0.5] : [0.3, 0.7];
+                        arrowPositions.forEach(t => {
+                            const pos = curve.getPointAt(t);
+                            const tan = curve.getTangentAt(t);
+                            const arrow = new THREE.Mesh(arrowGeo, lineMat);
+                            arrow.position.copy(pos);
+                            arrow.lookAt(pos.clone().add(tan));
+                            magnetSystem.add(arrow); // 添加到磁铁系统组
+                        });
+                    }
+                }
+            });
+        }
+
+        // 初始化
+        setTimeout(() => {
+            generateFieldLines();
+            // 初始让磁铁稍微偏上，确保线圈在其正下方较远处且画面居中
+            magnetSystem.position.y = 2; 
+            updateFluxUI();
+            updateIntersections(); 
+            loading.style.opacity = '0';
+            setTimeout(() => loading.style.display = 'none', 500);
+        }, 100);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高中物理公式大全 - 一级结论 & 二级结论</title>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [
+                    ['$', '$']
+                ],
+                displayMath: [
+                    ['$$', '$$']
+                ],
+                processEscapes: true,
+                processEnvironments: true,
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+                ignoreHtmlClass: 'no-mathjax',
+            },
+            chtml: {
+                scale: 0.95,
+                minScale: 0.8,
+            },
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async>
+    </script>
+    <style>
+        :root {
+            --primary-blue: #1a56db;
+            --primary-blue-light: #e8f0fe;
+            --primary-blue-border: #3b82f6;
+            --secondary-amber: #b45309;
+            --secondary-amber-light: #fffbeb;
+            --secondary-amber-border: #f59e0b;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.10), 0 4px 8px rgba(0, 0, 0, 0.05);
+            --radius: 10px;
+            --radius-sm: 6px;
+            --transition: 0.2s ease;
+            --font-mono: 'SF Mono', 'Fira Code', 'Consolas', 'Menlo', 'Monaco', monospace;
+            --max-width: 960px;
+            --nav-height: 56px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: calc(var(--nav-height) + 24px);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding-bottom: 60px;
+        }
+
+        /* ─── 顶部导航栏 ─── */
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            height: var(--nav-height);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+        .top-nav::-webkit-scrollbar {
+            height: 0;
+        }
+        .top-nav .nav-brand {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--primary-blue);
+            margin-right: 12px;
+            flex-shrink: 0;
+            letter-spacing: -0.3px;
+        }
+        .top-nav a {
+            text-decoration: none;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            transition: var(--transition);
+            flex-shrink: 0;
+            font-weight: 500;
+        }
+        .top-nav a:hover,
+        .top-nav a:focus {
+            background: var(--primary-blue-light);
+            color: var(--primary-blue);
+        }
+        .top-nav a.active {
+            background: var(--primary-blue);
+            color: #fff;
+        }
+        .nav-sep {
+            width: 1px;
+            height: 20px;
+            background: var(--border);
+            flex-shrink: 0;
+            margin: 0 4px;
+        }
+        .nav-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+        .nav-badge.primary {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .nav-badge.secondary {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* ─── 主容器 ─── */
+        .main-container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 24px 20px;
+        }
+
+        /* ─── 页面标题 ─── */
+        .page-header {
+            text-align: center;
+            padding: 32px 20px 20px;
+            margin-bottom: 8px;
+        }
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #0f172a;
+            margin-bottom: 6px;
+        }
+        .page-header .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            letter-spacing: 0.2px;
+        }
+        .page-header .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+        .legend-dot.primary {
+            background: var(--primary-blue);
+        }
+        .legend-dot.secondary {
+            background: var(--secondary-amber);
+        }
+
+        /* ─── 分区标题 ─── */
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 36px 0 16px;
+            scroll-margin-top: calc(var(--nav-height) + 20px);
+        }
+        .section-divider .icon-block {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            font-weight: 700;
+        }
+        .section-divider.primary-section .icon-block {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .section-divider.secondary-section .icon-block {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .section-divider h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: #0f172a;
+        }
+        .section-divider.primary-section h2 {
+            color: #1e3a5f;
+        }
+        .section-divider.secondary-section h2 {
+            color: #5c3d0e;
+        }
+        .section-divider .tag {
+            font-size: 0.75rem;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
+        }
+        .section-divider.primary-section .tag {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .section-divider.secondary-section .tag {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* ─── 卡片 ─── */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: var(--transition);
+            border: 1px solid var(--border);
+        }
+        .card:hover {
+            box-shadow: var(--shadow-md);
+        }
+        .card-header {
+            padding: 14px 18px;
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: default;
+            letter-spacing: -0.2px;
+            border-bottom: 1px solid transparent;
+        }
+        .card.primary-card .card-header {
+            background: #f8fafd;
+            color: #1e3a5f;
+            border-bottom-color: #e8eef6;
+        }
+        .card.secondary-card .card-header {
+            background: #fffdf7;
+            color: #5c3d0e;
+            border-bottom-color: #fef3d0;
+        }
+        .card-header .card-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .card.primary-card .card-num {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .card.secondary-card .card-num {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .card-body {
+            padding: 16px 18px;
+        }
+        .card-body p {
+            margin-bottom: 8px;
+        }
+        .card-body p:last-child {
+            margin-bottom: 0;
+        }
+        .card-body ul,
+        .card-body ol {
+            padding-left: 20px;
+            margin: 6px 0 10px;
+        }
+        .card-body li {
+            margin-bottom: 5px;
+            color: var(--text);
+        }
+        .card-body li:last-child {
+            margin-bottom: 0;
+        }
+        .card-body .sub-heading {
+            font-weight: 700;
+            color: var(--text);
+            margin: 10px 0 4px;
+            font-size: 0.93rem;
+            letter-spacing: -0.1px;
+        }
+        .card-body .sub-heading:first-child {
+            margin-top: 0;
+        }
+        .highlight-box {
+            background: #f8fafc;
+            border-left: 3px solid var(--primary-blue-border);
+            padding: 10px 14px;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            margin: 8px 0;
+            font-size: 0.9rem;
+        }
+        .card.secondary-card .highlight-box {
+            border-left-color: var(--secondary-amber-border);
+            background: #fffdf7;
+        }
+        .formula-block {
+            display: block;
+            text-align: center;
+            padding: 8px 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .formula-block mjx-container {
+            display: inline-block !important;
+        }
+
+        /* ─── 回到顶部按钮 ─── */
+        .back-to-top {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--primary-blue);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: var(--shadow-lg);
+            transition: var(--transition);
+            z-index: 90;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+        }
+        .back-to-top.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+        .back-to-top:hover {
+            background: #1e40af;
+            transform: translateY(-3px);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
+        }
+
+        /* ─── 响应式 ─── */
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+            .card-header {
+                font-size: 0.9rem;
+                padding: 12px 14px;
+            }
+            .card-body {
+                padding: 12px 14px;
+                font-size: 0.88rem;
+            }
+            .section-divider h2 {
+                font-size: 1.2rem;
+            }
+            .section-divider .icon-block {
+                width: 34px;
+                height: 34px;
+                font-size: 1.1rem;
+                border-radius: 8px;
+            }
+            .top-nav {
+                padding: 0 12px;
+                gap: 4px;
+            }
+            .top-nav a {
+                font-size: 0.78rem;
+                padding: 5px 10px;
+            }
+            .back-to-top {
+                bottom: 18px;
+                right: 14px;
+                width: 38px;
+                height: 38px;
+                font-size: 1rem;
+            }
+            .page-header .legend {
+                gap: 12px;
+            }
+        }
+        @media (max-width: 480px) {
+            .page-header h1 {
+                font-size: 1.3rem;
+            }
+            .card-body {
+                font-size: 0.82rem;
+                padding: 10px 12px;
+            }
+            .card-header {
+                font-size: 0.82rem;
+                padding: 10px 12px;
+            }
+            .section-divider h2 {
+                font-size: 1.05rem;
+            }
+            .top-nav a {
+                font-size: 0.72rem;
+                padding: 4px 8px;
+            }
+            .top-nav .nav-brand {
+                font-size: 0.85rem;
+                margin-right: 6px;
+            }
+        }
+
+        /* 打印样式 */
+        @media print {
+            .top-nav,
+            .back-to-top {
+                display: none !important;
+            }
+            body {
+                background: #fff;
+                font-size: 11pt;
+            }
+            .card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+                break-inside: avoid;
+                margin-bottom: 8px;
+            }
+            .main-container {
+                max-width: 100%;
+                padding: 0 10px;
+            }
+            html {
+                scroll-padding-top: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══════════════ 顶部导航 ═══════════════ -->
+    <nav class="top-nav" id="topNav">
+        <span class="nav-brand">📘 物理公式</span>
+        <a href="#section-primary" class="active">
+            <span class="nav-badge primary">一级</span> 结论
+        </a>
+        <a href="#section-secondary">
+            <span class="nav-badge secondary">二级</span> 结论
+        </a>
+        <span class="nav-sep"></span>
+        <a href="#primary-mechanics">力学</a>
+        <a href="#primary-thermo">热学</a>
+        <a href="#primary-em">电磁学</a>
+        <a href="#primary-optics">光学</a>
+        <a href="#primary-atom">原子物理</a>
+        <a href="条形磁铁3D（石）.html">条形磁铁3D（石）</a>
+    </nav>
+
+    <!-- ═══════════════ 主容器 ═══════════════ -->
+    <div class="main-container">
+
+        <!-- 页面标题 -->
+        <header class="page-header">
+            <h1>高中物理公式大全</h1>
+            <p class="subtitle">系统梳理 · 一级结论（教材公式）& 二级结论（常用推论）</p>
+            <div class="legend">
+                <span class="legend-item"><span class="legend-dot primary"></span> 一级结论 — 教材公式/定律</span>
+                <span class="legend-item"><span class="legend-dot secondary"></span> 二级结论 — 推论/快速解题</span>
+            </div>
+        </header>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--         第一部分：一级结论                 -->
+        <!-- ═══════════════════════════════════════ -->
+        <div class="section-divider primary-section" id="section-primary">
+            <div class="icon-block">Ⅰ</div>
+            <h2>第一部分：一级结论</h2>
+            <span class="tag">必背公式与定律</span>
+        </div>
+
+        <!-- ─── 一、力学 ─── -->
+        <div class="card primary-card" id="primary-mechanics">
+            <div class="card-header"><span class="card-num">1</span>一、力学</div>
+            <div class="card-body">
+
+                <p class="sub-heading">1. 运动学公式</p>
+                <p><strong>(1) 匀变速直线运动</strong></p>
+                <ul>
+                    <li>速度公式：$v_t = v_0 + at$</li>
+                    <li>位移公式：$s = v_0t + \frac{1}{2}at^2$</li>
+                    <li>速度位移公式：$v_t^2 - v_0^2 = 2as$</li>
+                    <li>平均速度（定义式）：$\bar{v} = \frac{s}{t}$</li>
+                </ul>
+                <p><strong>(2) 三个重要推论</strong></p>
+                <ul>
+                    <li>中间时刻速度：$v_{\frac{t}{2}} = \bar{v} = \frac{v_0 + v_t}{2}$</li>
+                    <li>中间位置速度：$v_{\frac{s}{2}} = \sqrt{\frac{v_0^2 + v_t^2}{2}}$</li>
+                    <li>位移差公式：$\Delta s = aT^2$（相邻连续相等时间内的位移之差）</li>
+                </ul>
+                <p><strong>(3) 自由落体运动</strong>（$v_0=0,\ a=g$）</p>
+                <ul>
+                    <li>$v_t = gt$，$h = \frac{1}{2}gt^2$，$v_t^2 = 2gh$</li>
+                </ul>
+                <p><strong>(4) 竖直上抛运动</strong></p>
+                <ul>
+                    <li>$s = v_0t - \frac{1}{2}gt^2$，$v_t = v_0 - gt$</li>
+                    <li>最大高度：$H_m = \frac{v_0^2}{2g}$，总时间：$t = \frac{2v_0}{g}$</li>
+                </ul>
+                <p><strong>(5) 平抛运动</strong></p>
+                <ul>
+                    <li>水平：$v_x = v_0$，$s_x = v_0t$</li>
+                    <li>竖直：$v_y = gt$，$s_y = \frac{1}{2}gt^2$</li>
+                    <li>合速度：$v_t = \sqrt{v_0^2+(gt)^2}$</li>
+                    <li>运动时间：$t = \sqrt{\frac{2h}{g}}$（由下落高度决定）</li>
+                </ul>
+                <p><strong>(6) 匀速圆周运动</strong></p>
+                <ul>
+                    <li>$v = \omega r$，$a_n = \frac{v^2}{r} = \omega^2 r$</li>
+                    <li>$F_n = m\frac{v^2}{r} = m\omega^2 r$</li>
+                    <li>$T = \frac{1}{f} = \frac{2\pi r}{v} = \frac{2\pi}{\omega}$</li>
+                </ul>
+
+                <p class="sub-heading" style="margin-top:14px;">2. 力的相互作用</p>
+                <ul>
+                    <li>重力：$G=mg$（$g\approx 9.8\text{ m/s}^2$）</li>
+                    <li>胡克定律：$F=kx$</li>
+                    <li>滑动摩擦力：$f=\mu F_N$</li>
+                    <li>静摩擦力：$0\leq f\leq f_{\max}$</li>
+                    <li>合力范围：$|F_1-F_2|\leq F\leq F_1+F_2$</li>
+                    <li>正交分解：$F_x=F\cos\theta,\ F_y=F\sin\theta$</li>
+                </ul>
+
+                <p class="sub-heading" style="margin-top:14px;">3. 牛顿运动定律</p>
+                <ul>
+                    <li>牛顿第二定律：$F_{\text{合}}=ma$</li>
+                    <li>牛顿第三定律：$F_{AB}=-F_{BA}$</li>
+                </ul>
+
+                <p class="sub-heading" style="margin-top:14px;">4. 万有引力与天体运动</p>
+                <ul>
+                    <li>$F=G\frac{m_1 m_2}{r^2}$，$G=6.67\times10^{-11}\text{ N·m}^2/\text{kg}^2$</li>
+                    <li>黄金代换：$GM=gR^2$</li>
+                    <li>卫星：$v=\sqrt{\frac{GM}{r}}$，$T=2\pi\sqrt{\frac{r^3}{GM}}$</li>
+                    <li>第一宇宙速度：$v_1=\sqrt{gR}\approx7.9\text{ km/s}$</li>
+                    <li>第二宇宙速度：$v_2\approx11.2\text{ km/s}$</li>
+                    <li>第三宇宙速度：$v_3\approx16.7\text{ km/s}$</li>
+                </ul>
+
+                <p class="sub-heading" style="margin-top:14px;">5. 功与能</p>
+                <ul>
+                    <li>功：$W=Fs\cos\theta$；功率：$P=\frac{W}{t}=Fv$</li>
+                    <li>动能：$E_k=\frac{1}{2}mv^2$；重力势能：$E_p=mgh$</li>
+                    <li>弹性势能：$E_p=\frac{1}{2}kx^2$</li>
+                    <li>动能定理：$W_{\text{合}}=\frac{1}{2}mv_2^2-\frac{1}{2}mv_1^2$</li>
+                    <li>机械能守恒：$E_{k1}+E_{p1}=E_{k2}+E_{p2}$（仅有重力或弹力做功）</li>
+                </ul>
+
+                <p class="sub-heading" style="margin-top:14px;">6. 动量</p>
+                <ul>
+                    <li>动量：$p=mv$；冲量：$I=Ft$</li>
+                    <li>动量定理：$Ft=mv'-mv$</li>
+                    <li>动量守恒：$m_1v_1+m_2v_2=m_1v_1'+m_2v_2'$（合外力为零）</li>
+                </ul>
+                <p><strong>弹性碰撞：</strong></p>
+                <div class="formula-block">
+                    $$v_1' = \frac{m_1-m_2}{m_1+m_2}v_1 + \frac{2m_2}{m_1+m_2}v_2$$
+                    $$v_2' = \frac{2m_1}{m_1+m_2}v_1 + \frac{m_2-m_1}{m_1+m_2}v_2$$
+                </div>
+                <p><strong>完全非弹性碰撞：</strong>$v'=\frac{m_1v_1+m_2v_2}{m_1+m_2}$（动能损失最大）</p>
+
+                <p class="sub-heading" style="margin-top:14px;">7. 机械振动与机械波</p>
+                <ul>
+                    <li>简谐运动回复力：$F=-kx$</li>
+                    <li>弹簧振子周期：$T=2\pi\sqrt{\frac{m}{k}}$</li>
+                    <li>单摆周期：$T=2\pi\sqrt{\frac{L}{g}}$</li>
+                    <li>波速：$v=\lambda f=\frac{\lambda}{T}$</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ─── 二、热学 ─── -->
+        <div class="card primary-card" id="primary-thermo">
+            <div class="card-header"><span class="card-num">2</span>二、热学</div>
+            <div class="card-body">
+                <p class="sub-heading">1. 分子动理论</p>
+                <ul>
+                    <li>阿伏加德罗常数：$N_A=6.02\times10^{23}\text{ mol}^{-1}$</li>
+                    <li>分子直径数量级：$10^{-10}\text{ m}$</li>
+                </ul>
+                <p class="sub-heading">2. 热力学定律</p>
+                <ul>
+                    <li>热力学第一定律：$\Delta U=W+Q$</li>
+                    <li>热力学第二定律（克劳修斯表述）：热量不能自发地从低温物体传到高温物体</li>
+                </ul>
+                <p class="sub-heading">3. 理想气体状态方程</p>
+                <ul>
+                    <li>$pV=nRT$，$\frac{p_1V_1}{T_1}=\frac{p_2V_2}{T_2}$</li>
+                    <li>等温：$p_1V_1=p_2V_2$（玻意耳定律）</li>
+                    <li>等压：$\frac{V_1}{T_1}=\frac{V_2}{T_2}$（盖-吕萨克定律）</li>
+                    <li>等容：$\frac{p_1}{T_1}=\frac{p_2}{T_2}$（查理定律）</li>
+                </ul>
+                <p class="sub-heading">4. 热量计算</p>
+                <ul>
+                    <li>$Q=cm\Delta t$，热值$q=\frac{Q}{m}$，热机效率$\eta=\frac{Q_{\text{有效}}}{Q_{\text{总}}}$</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ─── 三、电磁学 ─── -->
+        <div class="card primary-card" id="primary-em">
+            <div class="card-header"><span class="card-num">3</span>三、电磁学</div>
+            <div class="card-body">
+                <p class="sub-heading">1. 静电场</p>
+                <ul>
+                    <li>库仑定律：$F=k\frac{q_1 q_2}{r^2}$，$k=9.0\times10^9\text{ N·m}^2/\text{C}^2$</li>
+                    <li>电场强度：$E=\frac{F}{q}$（定义式）；点电荷：$E=k\frac{Q}{r^2}$；匀强：$E=\frac{U}{d}$</li>
+                    <li>电势：$\varphi=\frac{E_p}{q}$；电势差：$U_{AB}=\varphi_A-\varphi_B$</li>
+                    <li>电场力做功：$W_{AB}=qU_{AB}$</li>
+                    <li>电容：$C=\frac{Q}{U}$；平行板：$C=\frac{\varepsilon_r S}{4\pi k d}$</li>
+                </ul>
+                <p class="sub-heading">2. 恒定电流</p>
+                <ul>
+                    <li>欧姆定律：$I=\frac{U}{R}$；电阻定律：$R=\rho\frac{L}{S}$</li>
+                    <li>电功率：$P=UI=I^2R=\frac{U^2}{R}$</li>
+                    <li>闭合电路欧姆定律：$I=\frac{E}{R+r}$，$U_{\text{路端}}=E-Ir$</li>
+                    <li>串联：$I$相同，$U_{\text{总}}=\sum U_i$，$R_{\text{总}}=\sum R_i$</li>
+                    <li>并联：$U$相同，$I_{\text{总}}=\sum I_i$，$\frac{1}{R_{\text{总}}}=\sum\frac{1}{R_i}$</li>
+                </ul>
+                <p class="sub-heading">3. 磁场</p>
+                <ul>
+                    <li>$B=\frac{F}{IL}$（$I\perp B$）；安培力：$F=BIL$</li>
+                    <li>洛伦兹力：$f=qvB$（$v\perp B$），左手定则判方向</li>
+                    <li>带电粒子圆周运动：$r=\frac{mv}{qB}$，$T=\frac{2\pi m}{qB}$</li>
+                </ul>
+                <p class="sub-heading">4. 电磁感应</p>
+                <ul>
+                    <li>法拉第定律：$E=n\frac{\Delta\Phi}{\Delta t}$</li>
+                    <li>切割磁感线：$E=BLv$（$B,L,v$两两垂直）</li>
+                    <li>磁通量：$\Phi=BS\cos\theta$</li>
+                    <li>自感电动势：$E=L\frac{\Delta I}{\Delta t}$</li>
+                </ul>
+                <p class="sub-heading">5. 交变电流</p>
+                <ul>
+                    <li>$e=E_m\sin\omega t$，$E_m=nBS\omega$</li>
+                    <li>有效值：$E_{\text{有}}=\frac{E_m}{\sqrt{2}}$，$U_{\text{有}}=\frac{U_m}{\sqrt{2}}$，$I_{\text{有}}=\frac{I_m}{\sqrt{2}}$</li>
+                    <li>理想变压器：$\frac{U_1}{U_2}=\frac{n_1}{n_2}$，$I_1U_1=I_2U_2$</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ─── 四、光学 ─── -->
+        <div class="card primary-card" id="primary-optics">
+            <div class="card-header"><span class="card-num">4</span>四、光学</div>
+            <div class="card-body">
+                <ul>
+                    <li>折射定律：$n_1\sin\theta_1=n_2\sin\theta_2$</li>
+                    <li>绝对折射率：$n=\frac{c}{v}=\frac{\sin\theta_1}{\sin\theta_2}$</li>
+                    <li>全反射临界角：$\sin C=\frac{1}{n}$</li>
+                    <li>双缝干涉条纹间距：$\Delta x=\frac{L}{d}\lambda$</li>
+                    <li>亮条纹：$\delta=k\lambda$（$k=0,1,2,\ldots$）</li>
+                    <li>暗条纹：$\delta=(2k+1)\frac{\lambda}{2}$</li>
+                    <li>光子能量：$E=h\nu$（$h=6.63\times10^{-34}\text{ J·s}$）</li>
+                    <li>光电效应方程：$E_k=h\nu-W_0$</li>
+                    <li>德布罗意波长：$\lambda=\frac{h}{p}$</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ─── 五、原子物理 ─── -->
+        <div class="card primary-card" id="primary-atom">
+            <div class="card-header"><span class="card-num">5</span>五、原子物理</div>
+            <div class="card-body">
+                <ul>
+                    <li>玻尔氢原子：$E_n=\frac{E_1}{n^2}$（$E_1=-13.6\text{ eV}$），$r_n=n^2r_1$（$r_1=0.053\text{ nm}$）</li>
+                    <li>能级跃迁：$h\nu=E_m-E_n$</li>
+                    <li>质能方程：$\Delta E=\Delta m\cdot c^2$</li>
+                    <li>核反应守恒：质量数守恒、电荷数守恒</li>
+                    <li>半衰期：$m=m_0\!\left(\frac{1}{2}\right)^{\frac{t}{T_{1/2}}}$</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--         第二部分：二级结论                 -->
+        <!-- ═══════════════════════════════════════ -->
+        <div class="section-divider secondary-section" id="section-secondary">
+            <div class="icon-block">Ⅱ</div>
+            <h2>第二部分：二级结论</h2>
+            <span class="tag">重要推论速查</span>
+        </div>
+
+        <!-- ─── 二级·一、运动学 ─── -->
+        <div class="card secondary-card" id="secondary-kinematics">
+            <div class="card-header"><span class="card-num">1-4</span>一、运动学</div>
+            <div class="card-body">
+                <ol>
+                    <li><strong>匀变速直线运动中：</strong>$V_{\frac{s}{2}} > V_{\frac{t}{2}}$（中间位置速度始终大于中间时刻速度）</li>
+                    <li><strong>初速度为零的匀加速直线运动比例式：</strong>
+                        <ul>
+                            <li>速度比：$v_1:v_2:v_3:\cdots=1:2:3:\cdots$</li>
+                            <li>前$nT$位移比：$s_1:s_2:s_3:\cdots=1^2:2^2:3^2:\cdots$</li>
+                            <li>第$n$个$T$内位移比：$1:3:5:\cdots:(2n-1)$</li>
+                            <li>通过相等位移时间比：$1:(\sqrt{2}-1):(\sqrt{3}-\sqrt{2}):\cdots$</li>
+                        </ul>
+                    </li>
+                    <li><strong>平抛运动推论：</strong>$\tan\theta_{\text{速}}=2\tan\theta_{\text{位}}$；速度反向延长线交于水平位移中点</li>
+                    <li><strong>竖直上抛对称性：</strong>上升与下落同一点速度大小相等、方向相反</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ─── 二级·二、静力学 ─── -->
+        <div class="card secondary-card" id="secondary-statics">
+            <div class="card-header"><span class="card-num">5-9</span>二、静力学</div>
+            <div class="card-body">
+                <ol start="5">
+                    <li><strong>合力范围：</strong>$|F_1-F_2|\leq F\leq F_1+F_2$</li>
+                    <li><strong>三力平衡：</strong>三个大小相等、互成120°的力合力为零；任意两力合力与第三力等大反向</li>
+                    <li><strong>绳的张力方向：</strong>沿绳指向绳收缩的方向</li>
+                    <li><strong>摩擦角与自锁：</strong>当$\theta\leq\arctan\mu$时物体自锁（斜面不下滑）</li>
+                    <li><strong>力的相似三角形法：</strong>三力平衡时力矢量三角形与几何三角形相似</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ─── 二级·三、动力学 ─── -->
+        <div class="card secondary-card" id="secondary-dynamics">
+            <div class="card-header"><span class="card-num">10-12</span>三、动力学</div>
+            <div class="card-body">
+                <ol start="10">
+                    <li><strong>等时圆结论：</strong>从竖直圆最高点沿弦滑到圆周任意点时间与直径自由落体相等；45°弦时间最短</li>
+                    <li><strong>整体法与隔离法：</strong>静止或匀速时$N=(M+m)g,\ f=0$；水平面光滑有加速度时$N<(M+m)g,\ f=ma$</li>
+                    <li><strong>弹簧双振子：</strong>两物体中间夹弹簧同时释放，动量、机械能均守恒</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ─── 二级·四、万有引力 ─── -->
+        <div class="card secondary-card" id="secondary-gravity">
+            <div class="card-header"><span class="card-num">13-15</span>四、万有引力</div>
+            <div class="card-body">
+                <ol start="13">
+                    <li><strong>人造卫星性质：</strong>半径越大，$v$越小、$\omega$越小、$T$越大、$a$越小</li>
+                    <li><strong>同步卫星：</strong>$T=24\text{ h}$，赤道平面上，高度约$3.6\times10^4\text{ km}$</li>
+                    <li><strong>双星系统：</strong>$m_1\omega^2 r_1=m_2\omega^2 r_2$，$r_1+r_2=L$，$T=2\pi\sqrt{\frac{L^3}{G(m_1+m_2)}}$</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ─── 二级·五、机械振动与波 ─── -->
+        <div class="card secondary-card" id="secondary-waves">
+            <div class="card-header"><span class="card-num">16-18</span>五、机械振动与波</div>
+            <div class="card-body">
+                <ol start="16">
+                    <li><strong>简谐运动对称性：</strong>靠近平衡位置时$a$减小而$v$增大；远离时$a$增大而$v$减小</li>
+                    <li><strong>波的干涉：</strong>加强点$|\Delta s|=k\lambda$；减弱点$|\Delta s|=(2k+1)\frac{\lambda}{2}$</li>
+                    <li><strong>波形平移法：</strong>沿传播方向平移$x=vt$得新波形</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ─── 二级·六、功与能 ─── -->
+        <div class="card secondary-card" id="secondary-energy">
+            <div class="card-header"><span class="card-num">19-21</span>六、功与能</div>
+            <div class="card-body">
+                <ol start="19">
+                    <li><strong>变力做功：</strong>可用$F$-$s$图像面积求解</li>
+                    <li><strong>机车启动：</strong>恒功率启动$a$减$v$增，最终$v_m=\frac{P}{f}$；恒加速度启动匀加速末$F>f$后切换恒功率</li>
+                    <li><strong>弹簧系统：</strong>两物体与弹簧，动量守恒+机械能守恒；最短或最长时两物体速度相等</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ─── 二级·七、动量 ─── -->
+        <div class="card secondary-card" id="secondary-momentum">
+            <div class="card-header"><span class="card-num">22-23</span>七、动量</div>
+            <div class="card-body">
+                <ol start="22">
+                    <li><strong>弹性碰撞特殊情况：</strong>
+                        <ul>
+                            <li>$m_1=m_2$时：速度交换</li>
+                            <li>$m_1\gg m_2$时：$v_1'\approx v_1$，$v_2'\approx2v_1$</li>
+                            <li>动球碰静球：$v_1'=\frac{m_1-m_2}{m_1+m_2}v_1$，$v_2'=\frac{2m_1}{m_1+m_2}v_1$</li>
+                        </ul>
+                    </li>
+                    <li><strong>人船模型：</strong>$M l_m=-m L_M$（位移与质量成反比）</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ─── 二级·八、电学 ─── -->
+        <div class="card secondary-card" id="secondary-electricity">
+            <div class="card-header"><span class="card-num">24-31</span>八、电学</div>
+            <div class="card-body">
+                <ol start="24">
+                    <li><strong>并联电路：</strong>总电阻小于任一支路；支路电阻增大则总电阻增大</li>
+                    <li><strong>滑动变阻器分压式：</strong>输出电压$0\to U$连续可调</li>
+                    <li><strong>电源输出功率：</strong>当$R_{\text{外}}=r$时最大，$P_{\max}=\frac{E^2}{4r}$</li>
+                    <li><strong>带电粒子匀强电场偏转：</strong>$y=\frac{qUL_0^2}{2mdv_0^2}$，$\tan\theta=\frac{qUL_0}{mdv_0^2}$</li>
+                    <li><strong>电势能变化：</strong>$W_{\text{电}}=-\Delta E_p$</li>
+                    <li><strong>圆形磁场：</strong>径向射入必径向射出</li>
+                    <li><strong>楞次定律推论：</strong>"来拒去留"、"增反减同"</li>
+                    <li><strong>理想变压器决定关系：</strong>副线圈电压由原线圈决定；原线圈电流和功率由副线圈决定</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ─── 二级·九、热学 ─── -->
+        <div class="card secondary-card" id="secondary-thermo">
+            <div class="card-header"><span class="card-num">32-34</span>九、热学</div>
+            <div class="card-body">
+                <ol start="32">
+                    <li><strong>宏观量与微观量联系：</strong>通过阿伏加德罗常数$N_A$联系</li>
+                    <li><strong>判断理想气体过程：</strong>①状态参量+气体定律；②热力学第一定律+能量角度</li>
+                    <li><strong>热力学第一定律符号法则：</strong>体积增大气体对外做功$W$为"$-$"；体积减小外界对气体做功$W$为"$+$"</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ─── 二级·十、光学与原子物理 ─── -->
+        <div class="card secondary-card" id="secondary-optics-atom">
+            <div class="card-header"><span class="card-num">35-38</span>十、光学与原子物理</div>
+            <div class="card-body">
+                <ol start="35">
+                    <li><strong>全反射条件：</strong>光密→光疏 + 入射角$\geq C$</li>
+                    <li><strong>可见光中：</strong>红光折射率最小、紫光最大；同一介质中红光速度最大</li>
+                    <li><strong>核能计算：</strong>$\Delta E=\Delta m\cdot c^2$，$1\text{ u}$质量亏损对应$931.5\text{ MeV}$</li>
+                    <li><strong>简谐运动（补充）：</strong>靠近平衡位置$a$减小$v$增大；远离平衡位置$a$增大$v$减小</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!--              页脚说明                     -->
+        <!-- ═══════════════════════════════════════ -->
+        <div class="highlight-box" style="margin-top: 28px; text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+            📌 <strong>说明：</strong>本文依据现行主流教材（人教版）编写。二级结论可直接用于解题，但考试时建议简述推导过程以确保得分。
+        </div>
+
+    </div><!-- /main-container -->
+
+    <!-- 回到顶部按钮 -->
+    <button class="back-to-top" id="backToTop" aria-label="回到顶部" title="回到顶部">↑</button>
+
+    <!-- ═══════════════ 脚本 ═══════════════ -->
+    <script>
+        (function() {
+            const backToTopBtn = document.getElementById('backToTop');
+            const topNav = document.getElementById('topNav');
+            const navLinks = topNav.querySelectorAll('a[href^="#"]');
+
+            // 回到顶部按钮显隐
+            function toggleBackToTop() {
+                if (window.scrollY > 500) {
+                    backToTopBtn.classList.add('visible');
+                } else {
+                    backToTopBtn.classList.remove('visible');
+                }
+            }
+
+            // 点击回到顶部
+            backToTopBtn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            // 滚动监听
+            let scrollTicking = false;
+            window.addEventListener('scroll', function() {
+                if (!scrollTicking) {
+                    requestAnimationFrame(function() {
+                        toggleBackToTop();
+                        updateActiveNav();
+                        scrollTicking = false;
+                    });
+                    scrollTicking = true;
+                }
+            });
+
+            // 高亮当前导航项
+            function updateActiveNav() {
+                const sections = [];
+                navLinks.forEach(link => {
+                    const targetId = link.getAttribute('href').substring(1);
+                    const target = document.getElementById(targetId);
+                    if (target) {
+                        sections.push({ link, top: target.getBoundingClientRect().top });
+                    }
+                });
+                // 找到当前视口中最靠前的section
+                let currentLink = null;
+                for (let i = sections.length - 1; i >= 0; i--) {
+                    if (sections[i].top < 180) {
+                        currentLink = sections[i].link;
+                        break;
+                    }
+                }
+                navLinks.forEach(link => link.classList.remove('active'));
+                if (currentLink) {
+                    currentLink.classList.add('active');
+                }
+            }
+
+            // 初始状态
+            toggleBackToTop();
+            updateActiveNav();
+
+            // 平滑滚动（针对不支持scroll-behavior的浏览器做兜底，现代浏览器均支持）
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const targetId = this.getAttribute('href').substring(1);
+                    const target = document.getElementById(targetId);
+                    if (target) {
+                        // 如果浏览器支持smooth滚动，CSS的scroll-behavior已处理
+                        // 这里做额外偏移补偿
+                        const navHeight = topNav.offsetHeight;
+                        const targetPosition = target.getBoundingClientRect().top + window
+                            .pageYOffset - navHeight - 20;
+                        window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+                        e.preventDefault();
+                    }
+                });
+            });
+        })();
+    </script>
+
+</body>
+</html>
