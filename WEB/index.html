@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的导航主页</title>
+    <style>
+        :root {
+            --bg-start: #0a0a1a;
+            --bg-mid: #111133;
+            --bg-end: #0d0d28;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --card-border: rgba(255, 255, 255, 0.10);
+            --card-hover-bg: rgba(255, 255, 255, 0.09);
+            --card-hover-border: rgba(255, 255, 255, 0.22);
+            --text-primary: #e8e8f0;
+            --text-secondary: #b0b0c8;
+            --glow-color-1: rgba(100, 140, 255, 0.30);
+            --glow-color-2: rgba(180, 100, 255, 0.25);
+            --glow-color-3: rgba(100, 200, 220, 0.20);
+            --accent: #8a9eff;
+            --accent-2: #c4a0ff;
+            --radius: 18px;
+            --transition-speed: 0.35s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #07071a 0%, #0d0d2b 30%, #0a0f24 60%, #08081f 100%);
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ========== 星空粒子层 ========== */
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .star {
+            position: absolute;
+            border-radius: 50%;
+            background: white;
+            animation: twinkle var(--dur) ease-in-out infinite;
+            animation-delay: var(--delay);
+            opacity: 0;
+        }
+        @keyframes twinkle {
+            0%,
+            100% {
+                opacity: 0.2;
+                transform: scale(1);
+            }
+            25% {
+                opacity: 0.9;
+                transform: scale(1.5);
+            }
+            50% {
+                opacity: 0.35;
+                transform: scale(0.9);
+            }
+            75% {
+                opacity: 0.75;
+                transform: scale(1.3);
+            }
+        }
+
+        /* ========== 流动光晕 ========== */
+        .aura {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: 0;
+            animation: floatAura 12s ease-in-out infinite;
+        }
+        .aura-1 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(90, 120, 255, 0.25) 0%, transparent 70%);
+            top: -15%;
+            left: -10%;
+            animation-delay: 0s;
+            animation-duration: 14s;
+        }
+        .aura-2 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(160, 90, 240, 0.22) 0%, transparent 70%);
+            bottom: -12%;
+            right: -8%;
+            animation-delay: -5s;
+            animation-duration: 16s;
+        }
+        .aura-3 {
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(80, 190, 210, 0.18) 0%, transparent 70%);
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -9s;
+            animation-duration: 13s;
+        }
+        @keyframes floatAura {
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+            20% {
+                transform: translate(40px, -30px) scale(1.08);
+            }
+            40% {
+                transform: translate(-25px, 35px) scale(0.94);
+            }
+            60% {
+                transform: translate(-40px, -15px) scale(1.05);
+            }
+            80% {
+                transform: translate(20px, 25px) scale(0.96);
+            }
+        }
+        .aura-2 {
+            animation-name: floatAura2;
+        }
+        @keyframes floatAura2 {
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+            25% {
+                transform: translate(-35px, -25px) scale(1.06);
+            }
+            50% {
+                transform: translate(30px, 30px) scale(0.93);
+            }
+            75% {
+                transform: translate(-20px, -35px) scale(1.07);
+            }
+        }
+
+        /* ========== 主容器 ========== */
+        .main-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 900px;
+            padding: 40px 30px 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+
+        /* ========== 头部区域 ========== */
+        .header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .header .greeting {
+            font-size: 0.9rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--accent);
+            opacity: 0.8;
+            font-weight: 500;
+        }
+        .header .site-title {
+            font-size: 2.6rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #d0d8ff 0%, #b8c4ff 30%, #cbb8ff 60%, #d0d8ff 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            filter: drop-shadow(0 0 18px rgba(140, 160, 255, 0.35));
+        }
+        .header .subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            letter-spacing: 1px;
+            opacity: 0.7;
+        }
+
+        /* ========== 时钟 ========== */
+        .clock-widget {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.6rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            color: var(--text-primary);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 40px;
+            padding: 10px 28px;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            transition: all var(--transition-speed);
+        }
+        .clock-widget .time-colon {
+            animation: blinkColon 1.2s step-end infinite;
+            color: var(--accent);
+        }
+        @keyframes blinkColon {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.25;
+            }
+        }
+        .clock-widget .date-part {
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            opacity: 0.7;
+            margin-left: 4px;
+        }
+
+        /* ========== 导航卡片网格 ========== */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 18px;
+            width: 100%;
+            max-width: 780px;
+        }
+
+        /* ========== 分类标签 ========== */
+        .nav-category {
+            grid-column: 1 / -1;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: #8a9eff;
+            padding: 18px 0 6px;
+            margin-top: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* ========== 单个卡片 ========== */
+        .nav-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 28px 16px 24px;
+            border-radius: var(--radius);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all var(--transition-speed) cubic-bezier(0.25, 0.1, 0.25, 1);
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .nav-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: var(--radius);
+            opacity: 0;
+            background: radial-gradient(ellipse at 50% 0%, var(--card-color-glow, rgba(140, 160, 255, 0.25)) 0%, transparent 65%);
+            transition: opacity var(--transition-speed);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .nav-card:hover::before {
+            opacity: 1;
+        }
+        .nav-card:hover {
+            background: var(--card-hover-bg);
+            border-color: var(--card-hover-border);
+            transform: translateY(-5px);
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--card-hover-border) inset,
+                0 0 60px var(--card-color-glow, rgba(140, 160, 255, 0.18));
+        }
+        .nav-card:active {
+            transform: scale(0.96);
+            transition: all 0.12s;
+        }
+        .card-icon {
+            position: relative;
+            z-index: 1;
+            font-size: 2.4rem;
+            line-height: 1;
+            transition: transform var(--transition-speed);
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
+        }
+        .nav-card:hover .card-icon {
+            transform: scale(1.15) translateY(-3px);
+        }
+        .card-label {
+            position: relative;
+            z-index: 1;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            transition: color var(--transition-speed);
+            text-align: center;
+        }
+        .nav-card:hover .card-label {
+            color: #fff;
+        }
+        .card-desc {
+            position: relative;
+            z-index: 1;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            opacity: 0.6;
+            letter-spacing: 0.5px;
+            transition: opacity var(--transition-speed);
+            text-align: center;
+            line-height: 1.3;
+        }
+        .nav-card:hover .card-desc {
+            opacity: 0.9;
+        }
+        .card-badge {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            z-index: 2;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--card-dot-color, #8a9eff);
+            box-shadow: 0 0 8px var(--card-dot-color, #8a9eff);
+            opacity: 0.7;
+            transition: all var(--transition-speed);
+        }
+        .nav-card:hover .card-badge {
+            opacity: 1;
+            box-shadow: 0 0 16px var(--card-dot-color, #8a9eff);
+        }
+
+        /* ========== 底部提示 ========== */
+        .footer-hint {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            opacity: 0.4;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        /* ========== 响应式 ========== */
+        @media (max-width: 768px) {
+            .header .site-title {
+                font-size: 2rem;
+                letter-spacing: 1px;
+            }
+            .nav-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 12px;
+            }
+            .nav-card {
+                padding: 22px 10px 18px;
+                gap: 7px;
+                border-radius: 14px;
+            }
+            .card-icon {
+                font-size: 2rem;
+            }
+            .card-label {
+                font-size: 0.82rem;
+                letter-spacing: 1px;
+            }
+            .card-desc {
+                font-size: 0.68rem;
+            }
+            .clock-widget {
+                font-size: 1.3rem;
+                padding: 8px 20px;
+                border-radius: 30px;
+            }
+            .main-wrapper {
+                padding: 25px 16px 40px;
+                gap: 28px;
+            }
+        }
+        @media (max-width: 400px) {
+            .nav-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .nav-card {
+                padding: 18px 6px 14px;
+                gap: 5px;
+                border-radius: 12px;
+            }
+            .card-icon {
+                font-size: 1.7rem;
+            }
+            .card-label {
+                font-size: 0.75rem;
+            }
+            .card-desc {
+                font-size: 0.65rem;
+            }
+            .header .site-title {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 星空粒子 -->
+    <div class="stars-container" id="starsContainer"></div>
+
+    <!-- 流动光晕 -->
+    <div class="aura aura-1"></div>
+    <div class="aura aura-2"></div>
+    <div class="aura aura-3"></div>
+
+    <!-- 主内容 -->
+    <div class="main-wrapper">
+        <div class="header">
+            <span class="greeting" id="greetingText">欢迎回来</span>
+            <h1 class="site-title">辰风者~导航站</h1>
+            <p class="subtitle">一处入口，链接万物</p>
+        </div>
+
+        <div class="clock-widget" id="clockWidget">
+            <span id="timeDisplay">00:00</span>
+            <span class="date-part" id="dateDisplay"></span>
+        </div>
+
+        <div class="nav-grid" id="navGrid"></div>
+
+        <p class="footer-hint">点击卡片即可跳转 · 按数字键1-9快速打开</p>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== 星空粒子 ====================
+            const starsContainer = document.getElementById('starsContainer');
+            const starCount = 90;
+            const fragment = document.createDocumentFragment();
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                const size = Math.random() * 2.8 + 0.8;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.setProperty('--dur', (Math.random() * 3 + 2.5) + 's');
+                star.style.setProperty('--delay', (Math.random() * 6) + 's');
+                star.style.opacity = Math.random() * 0.45 + 0.15;
+                fragment.appendChild(star);
+            }
+            starsContainer.appendChild(fragment);
+
+            // ==================== 实时时钟 ====================
+            function updateClock() {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const timeStr = hours + '<span class="time-colon">:</span>' + minutes;
+                document.getElementById('timeDisplay').innerHTML = timeStr;
+
+                const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+                const month = now.getMonth() + 1;
+                const day = now.getDate();
+                const weekday = weekdays[now.getDay()];
+                document.getElementById('dateDisplay').textContent =
+                    `${month}月${day}日 · 周${weekday}`;
+
+                const h = now.getHours();
+                const greetingEl = document.getElementById('greetingText');
+                if (h < 6) greetingEl.textContent = '夜深了，晚安';
+                else if (h < 9) greetingEl.textContent = '早上好，新的一天';
+                else if (h < 12) greetingEl.textContent = '上午好';
+                else if (h < 14) greetingEl.textContent = '中午好';
+                else if (h < 18) greetingEl.textContent = '下午好';
+                else if (h < 22) greetingEl.textContent = '晚上好';
+                else greetingEl.textContent = '夜深了，晚安';
+            }
+            updateClock();
+            setInterval(updateClock, 10000);
+
+            // ==================== 导航链接配置（增加分类） ====================
+            const navLinks = [
+                { type: 'category', label: '💻 开发常用' },
+                {
+                    id: 'github',
+                    icon: '🐙',
+                    label: 'GitHub',
+                    desc: '代码仓库',
+                    url: 'https://github.com',
+                    colorDot: '#8bda6b',
+                    colorGlow: 'rgba(130,210,100,0.28)',
+                },
+                {
+                    id: 'toolbox',
+                    icon: '🧰',
+                    label: '在线工具',
+                    desc: '实用工具箱',
+                    url: 'https://tool.lu',
+                    colorDot: '#5b8af7',
+                    colorGlow: 'rgba(91,138,247,0.28)',
+                },
+                {
+                    id: 'docs',
+                    icon: '📄',
+                    label: '文档笔记',
+                    desc: '知识管理',
+                    url: 'https://www.notion.so',
+                    colorDot: '#f5a623',
+                    colorGlow: 'rgba(245,166,35,0.28)',
+                },
+                {
+                    id: 'docs',
+                    icon: '✝',
+                    label: '物理公式',
+                    desc: '知识管理',
+                    url: './物理公式.html',
+                    colorDot: '#f5a623',
+                    colorGlow: 'rgba(245,166,35,0.28)',
+                },
+
+                { type: 'category', label: '🎬 影音娱乐' },
+                {
+                    id: 'bilibili',
+                    icon: '📺',
+                    label: 'Bilibili',
+                    desc: '视频平台',
+                    url: 'https://www.bilibili.com',
+                    colorDot: '#fb7299',
+                    colorGlow: 'rgba(251,114,153,0.28)',
+                },
+                {
+                    id: 'music',
+                    icon: '🎵',
+                    label: '网易云音乐',
+                    desc: '听歌放松',
+                    url: 'https://music.163.com',
+                    colorDot: '#ec4141',
+                    colorGlow: 'rgba(236,65,65,0.28)',
+                },
+
+                { type: 'category', label: '🧠 知识社区' },
+                {
+                    id: 'zhihu',
+                    icon: '🧠',
+                    label: '知乎',
+                    desc: '问答社区',
+                    url: 'https://www.zhihu.com',
+                    colorDot: '#0084ff',
+                    colorGlow: 'rgba(0,132,255,0.28)',
+                },
+                {
+                    id: 'ai',
+                    icon: '🤖',
+                    label: 'AI 助手',
+                    desc: '智能对话',
+                    url: 'https://chat.openai.com',
+                    colorDot: '#10a37f',
+                    colorGlow: 'rgba(16,163,127,0.28)',
+                },
+
+                { type: 'category', label: '✨ 创意灵感' },
+                {
+                    id: 'design',
+                    icon: '🎨',
+                    label: '设计灵感',
+                    desc: 'Dribbble',
+                    url: 'https://dribbble.com',
+                    colorDot: '#ea4c89',
+                    colorGlow: 'rgba(234,76,137,0.28)',
+                },
+	{
+ 	    id: 'gallery',
+	    icon: '🖼️',
+	    label: '我的相册',
+ 	    desc: '照片与视频',
+ 	    url: './gallery.html',       // 指向本地页面
+ 	    colorDot: '#f0932b',
+	    colorGlow: 'rgba(240,147,43,0.28)',
+	},
+	{
+ 	    id: 'download',
+	    icon: '🖼️',
+	    label: '资料',
+ 	    desc: '文件下载',
+ 	    url: './download.html',       // 指向本地页面
+ 	    colorDot: '#f0932b',
+	    colorGlow: 'rgba(240,147,43,0.28)',
+	},	
+//在此处可以继续拓展
+
+            //    { type: 'category', label: '✨ 创意灵感' },
+             //   {
+              //      id: 'design',
+             //       icon: '🎨',
+              //      label: '设计灵感',
+               //     desc: 'Dribbble',
+              //      url: 'https://dribbble.com',
+              //      colorDot: '#ea4c89',
+               //     colorGlow: 'rgba(234,76,137,0.28)',
+              //  },
+            ];
+
+            // ==================== 渲染卡片和分类 ====================
+            const navGrid = document.getElementById('navGrid');
+            const cardOnlyLinks = []; // 只包含真实卡片，供键盘快捷键使用
+
+            navLinks.forEach(item => {
+                // 如果是分类标签
+                if (item.type === 'category') {
+                    const divider = document.createElement('div');
+                    divider.className = 'nav-category';
+                    divider.textContent = item.label;
+                    navGrid.appendChild(divider);
+                    return;
+                }
+
+                // 普通卡片
+                cardOnlyLinks.push(item);
+
+                const card = document.createElement('a');
+                card.classList.add('nav-card');
+                card.href = item.url;
+                card.target = '_blank';
+                card.rel = 'noopener noreferrer';
+                card.style.setProperty('--card-dot-color', item.colorDot || '#8a9eff');
+                card.style.setProperty('--card-color-glow', item.colorGlow || 'rgba(140,160,255,0.25)');
+                card.setAttribute('data-id', item.id);
+
+                card.innerHTML = `
+                    <span class="card-badge"></span>
+                    <span class="card-icon">${item.icon}</span>
+                    <span class="card-label">${item.label}</span>
+                    <span class="card-desc">${item.desc}</span>
+                `;
+                navGrid.appendChild(card);
+            });
+
+            // ==================== 键盘快捷键 (基于卡片顺序) ====================
+            document.addEventListener('keydown', function(e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)
+                    return;
+
+                const key = e.key;
+                if (key >= '1' && key <= '9') {
+                    const index = parseInt(key) - 1;
+                    if (index < cardOnlyLinks.length) {
+                        window.open(cardOnlyLinks[index].url, '_blank', 'noopener,noreferrer');
+                        const card = navGrid.querySelector(`[data-id="${cardOnlyLinks[index].id}"]`);
+                        if (card) {
+                            card.style.transform = 'scale(0.93)';
+                            card.style.boxShadow = '0 0 35px var(--card-color-glow, rgba(140,160,255,0.5))';
+                            setTimeout(() => {
+                                card.style.transform = '';
+                                card.style.boxShadow = '';
+                            }, 180);
+                        }
+                    }
+                }
+            });
+
+            console.log('✅ 导航主页已就绪（含分类标签）');
+            console.log('💡 按数字键 1-' + cardOnlyLinks.length + ' 可快速跳转卡片');
+            console.log('📝 在 navLinks 数组中可自由添加分类或卡片');
+        })();
+    </script>
+</body>
+</html>

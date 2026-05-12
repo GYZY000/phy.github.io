@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下载中心 · 我的导航站</title>
+    <style>
+        :root {
+            --bg-start: #0a0a1a;
+            --bg-mid: #111133;
+            --bg-end: #0d0d28;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --card-border: rgba(255, 255, 255, 0.10);
+            --card-hover-bg: rgba(255, 255, 255, 0.09);
+            --card-hover-border: rgba(255, 255, 255, 0.22);
+            --text-primary: #e8e8f0;
+            --text-secondary: #b0b0c8;
+            --accent: #8a9eff;
+            --radius: 18px;
+            --transition-speed: 0.35s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #07071a 0%, #0d0d2b 30%, #0a0f24 60%, #08081f 100%);
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 星空粒子 */
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .star {
+            position: absolute;
+            border-radius: 50%;
+            background: white;
+            animation: twinkle var(--dur) ease-in-out infinite;
+            animation-delay: var(--delay);
+            opacity: 0;
+        }
+        @keyframes twinkle {
+            0%,
+            100% {
+                opacity: 0.2;
+                transform: scale(1);
+            }
+            25% {
+                opacity: 0.9;
+                transform: scale(1.5);
+            }
+            50% {
+                opacity: 0.35;
+                transform: scale(0.9);
+            }
+            75% {
+                opacity: 0.75;
+                transform: scale(1.3);
+            }
+        }
+
+        /* 流动光晕 */
+        .aura {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .aura-1 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(90, 120, 255, 0.25) 0%, transparent 70%);
+            top: -15%;
+            left: -10%;
+            animation: floatAura 14s ease-in-out infinite;
+        }
+        .aura-2 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(160, 90, 240, 0.22) 0%, transparent 70%);
+            bottom: -12%;
+            right: -8%;
+            animation: floatAura2 16s ease-in-out infinite;
+        }
+        .aura-3 {
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(80, 190, 210, 0.18) 0%, transparent 70%);
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: floatAura 13s ease-in-out infinite;
+        }
+        @keyframes floatAura {
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+            20% {
+                transform: translate(40px, -30px) scale(1.08);
+            }
+            40% {
+                transform: translate(-25px, 35px) scale(0.94);
+            }
+            60% {
+                transform: translate(-40px, -15px) scale(1.05);
+            }
+            80% {
+                transform: translate(20px, 25px) scale(0.96);
+            }
+        }
+        @keyframes floatAura2 {
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+            25% {
+                transform: translate(-35px, -25px) scale(1.06);
+            }
+            50% {
+                transform: translate(30px, 30px) scale(0.93);
+            }
+            75% {
+                transform: translate(-20px, -35px) scale(1.07);
+            }
+        }
+
+        /* 主容器 */
+        .main-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 900px;
+            padding: 40px 30px 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 35px;
+        }
+
+        /* 返回链接 */
+        .back-link {
+            align-self: flex-start;
+            text-decoration: none;
+            color: var(--accent);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .back-link:hover {
+            opacity: 1;
+        }
+
+        /* 头部 */
+        .header {
+            text-align: center;
+        }
+        .header .page-title {
+            font-size: 2.4rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #d0d8ff 0%, #cbb8ff 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            filter: drop-shadow(0 0 16px rgba(140, 160, 255, 0.35));
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+            margin-top: 8px;
+            letter-spacing: 1px;
+        }
+
+        /* 下载卡片网格 */
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 18px;
+            width: 100%;
+            max-width: 780px;
+        }
+
+        /* 单个下载卡片 */
+        .download-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 26px 16px 20px;
+            border-radius: var(--radius);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all var(--transition-speed) cubic-bezier(0.25, 0.1, 0.25, 1);
+            overflow: hidden;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .download-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: var(--radius);
+            opacity: 0;
+            background: radial-gradient(ellipse at 50% 0%, var(--card-glow, rgba(100, 200, 220, 0.2)) 0%, transparent 65%);
+            transition: opacity var(--transition-speed);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .download-card:hover::before {
+            opacity: 1;
+        }
+        .download-card:hover {
+            background: var(--card-hover-bg);
+            border-color: var(--card-hover-border);
+            transform: translateY(-4px);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--card-hover-border) inset,
+                0 0 50px var(--card-glow, rgba(100, 200, 220, 0.15));
+        }
+        .download-card:active {
+            transform: scale(0.96);
+        }
+
+        .file-icon {
+            font-size: 2.8rem;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
+            transition: transform var(--transition-speed);
+        }
+        .download-card:hover .file-icon {
+            transform: scale(1.1) translateY(-2px);
+        }
+        .file-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 1;
+        }
+        .file-desc {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+            letter-spacing: 0.5px;
+            position: relative;
+            z-index: 1;
+        }
+        .download-badge {
+            margin-top: 4px;
+            position: relative;
+            z-index: 1;
+            font-size: 0.7rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 4px 14px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+            transition: all var(--transition-speed);
+            color: var(--accent);
+        }
+        .download-card:hover .download-badge {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #fff;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .download-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 12px;
+            }
+            .download-card {
+                padding: 20px 10px 16px;
+                gap: 8px;
+                border-radius: 14px;
+            }
+            .file-icon {
+                font-size: 2.2rem;
+            }
+            .header .page-title {
+                font-size: 1.8rem;
+            }
+        }
+        @media (max-width: 400px) {
+            .download-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 星空与光晕背景 -->
+    <div class="stars-container" id="starsContainer"></div>
+    <div class="aura aura-1"></div>
+    <div class="aura aura-2"></div>
+    <div class="aura aura-3"></div>
+
+    <div class="main-wrapper">
+        <a href="./index.html" class="back-link">← 返回主页</a>
+
+        <div class="header">
+            <h1 class="page-title">📦 下载中心</h1>
+            <p class="subtitle">照片、视频、文件包 · 一键下载</p>
+        </div>
+
+        <div class="download-grid" id="downloadGrid"></div>
+
+        <p style="color: var(--text-secondary); opacity: 0.4; font-size: 0.75rem; letter-spacing: 1px;">
+            点击卡片即可下载 · 在下方数组中轻松管理文件
+        </p>
+    </div>
+
+    <script>
+        (function() {
+            // 生成星空粒子
+            const starsContainer = document.getElementById('starsContainer');
+            const fragment = document.createDocumentFragment();
+            for (let i = 0; i < 80; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                const size = Math.random() * 2.6 + 0.8;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.setProperty('--dur', (Math.random() * 3 + 2.5) + 's');
+                star.style.setProperty('--delay', (Math.random() * 6) + 's');
+                star.style.opacity = Math.random() * 0.4 + 0.15;
+                fragment.appendChild(star);
+            }
+            starsContainer.appendChild(fragment);
+
+            // ========== 📦 下载文件配置（在这里增删改！） ==========
+            const downloadList = [
+                {
+                    id: 'photo-pack',
+                    icon: '🖼️',
+                    name: '照片合集',
+                    desc: '高清壁纸·5张',
+                    url: './files/艺术班.zip',      // 修改为你的压缩包路径
+                    fileType: 'ZIP 压缩包',
+                    cardGlow: 'rgba(255, 159, 67, 0.22)',
+                },
+                {
+                    id: 'video-demo',
+                    icon: '🎬',
+                    name: '示例视频',
+                    desc: '旅行短片',
+                    url: './video/demo.mp4',       // 视频文件
+                    fileType: 'MP4 视频',
+                    cardGlow: 'rgba(84, 160, 255, 0.22)',
+                },
+                {
+                    id: 'wallpaper',
+                    icon: '🌄',
+                    name: '风景壁纸',
+                    desc: '4K 超清',
+                    url: './images/wallpaper.jpg',  // 单张图片
+                    fileType: 'JPG 图片',
+                    cardGlow: 'rgba(46, 213, 115, 0.22)',
+                },
+                {
+                    id: 'doc-template',
+                    icon: '📄',
+                    name: '文档模板',
+                    desc: 'Word模板',
+                    url: './files/教学设计.docx',   // 文档
+                    fileType: 'DOCX 文档',
+                    cardGlow: 'rgba(245, 166, 35, 0.22)',
+                },
+                {
+                    id: 'ebook',
+                    icon: '📚',
+                    name: '电子书',
+                    desc: 'PDF 格式',
+                    url: './files/ebook.pdf',       // PDF文件
+                    fileType: 'PDF 文档',
+                    cardGlow: 'rgba(236, 65, 65, 0.22)',
+                },
+                // 👇 继续添加更多文件...
+                // {
+                //     id: 'new-file',
+                //     icon: '🎵',
+                //     name: '音乐文件',
+                //     desc: '背景音乐',
+                //     url: './music/bgm.mp3',
+                //     fileType: 'MP3 音频',
+                //     cardGlow: 'rgba(160, 90, 240, 0.22)',
+                // },
+            ];
+
+            // 渲染下载卡片
+            const downloadGrid = document.getElementById('downloadGrid');
+            downloadList.forEach(item => {
+                const card = document.createElement('a');
+                card.className = 'download-card';
+                card.href = item.url;
+                card.setAttribute('download', ''); // 强制下载
+                card.style.setProperty('--card-glow', item.cardGlow || 'rgba(100, 140, 255, 0.2)');
+                card.setAttribute('data-id', item.id);
+
+                card.innerHTML = `
+                    <span class="file-icon">${item.icon}</span>
+                    <span class="file-name">${item.name}</span>
+                    <span class="file-desc">${item.desc}</span>
+                    <span class="download-badge">⬇ ${item.fileType || '下载'}</span>
+                `;
+                downloadGrid.appendChild(card);
+            });
+
+            console.log('✅ 下载中心已就绪，共 ' + downloadList.length + ' 个文件');
+            console.log('📝 编辑 downloadList 数组即可增删文件');
+        })();
+    </script>
+</body>
+</html>
