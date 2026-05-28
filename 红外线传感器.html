@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红外传感器原理动画</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel-bg: rgba(15, 23, 42, 0.9);
+            --text: #e2e8f0;
+            --accent: #f97316;
+            --accent2: #3b82f6;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 10px 30px;
+            width: 100%;
+            max-width: 960px;
+        }
+
+        .title-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .title-row h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.3px;
+        }
+        .badge {
+            font-size: 0.7rem;
+            background: var(--accent);
+            color: #000;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .canvas-wrapper {
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 0 2px var(--border),
+                0 0 100px rgba(249, 115, 22, 0.1);
+            cursor: pointer;
+            transition: box-shadow 0.4s;
+            background: #0b1622;
+        }
+        .canvas-wrapper:hover {
+            box-shadow:
+                0 24px 72px rgba(0, 0, 0, 0.6),
+                0 0 0 2px rgba(255, 255, 255, 0.12),
+                0 0 140px rgba(249, 115, 22, 0.2);
+        }
+        canvas {
+            display: block;
+            max-width: 94vw;
+            max-height: 65vh;
+            width: 100%;
+            height: auto;
+        }
+
+        .info-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px 20px;
+            width: 100%;
+            max-width: 860px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: #cbd5e1;
+            font-size: 0.8rem;
+        }
+
+        .indicator-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .led {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #334155;
+            transition: all 0.1s ease;
+            box-shadow: 0 0 0px rgba(0, 0, 0, 0);
+        }
+        .led.on-high {
+            background: #4fdf80;
+            box-shadow: 0 0 12px #4fdf80, 0 0 24px rgba(79, 223, 128, 0.6);
+        }
+        .led.on-low {
+            background: #ef4444;
+            box-shadow: 0 0 12px #ef4444, 0 0 24px rgba(239, 68, 68, 0.6);
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .slider-group label {
+            font-weight: 600;
+            color: #e2e8f0;
+            font-size: 0.7rem;
+            white-space: nowrap;
+        }
+        .slider-group input[type="range"] {
+            width: 90px;
+            cursor: pointer;
+        }
+        .btn {
+            padding: 6px 14px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: #e2e8f0;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.35);
+        }
+        .btn.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+
+        @media (max-width: 640px) {
+            .info-panel {
+                gap: 10px;
+                padding: 10px 14px;
+            }
+            .slider-group input[type="range"] {
+                width: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title-row">
+            <h1>💡 红外传感器工作原理</h1>
+            <span class="badge">反射式</span>
+        </div>
+
+        <div class="canvas-wrapper" id="canvasWrapper">
+            <canvas id="mainCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+            <div class="indicator-group">
+                <span style="color:#94a3b8;">输出电平</span>
+                <span class="led" id="outputLed"></span>
+                <span id="levelText" style="font-weight:600;font-size:0.75rem;">--</span>
+            </div>
+            <div class="indicator-group">
+                <span style="color:#94a3b8;">反射强度</span>
+                <span id="intensityValue" style="font-weight:700;color:#facc15;min-width:32px;">0%</span>
+            </div>
+            <div class="slider-group">
+                <label>黑线速度</label>
+                <input type="range" id="speedSlider" min="20" max="200" value="80" step="5">
+            </div>
+            <button class="btn active" id="pauseBtn">⏯️ 暂停</button>
+            <button class="btn" id="resetBtn">↺ 重置</button>
+        </div>
+        <div style="color:#64748b;font-size:0.65rem;text-align:center;letter-spacing:0.4px;">
+            🖱️ 点击画布暂停 | 观察红外光反射 & 比较器输出
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('mainCanvas');
+            const ctx = canvas.getContext('2d');
+            const wrapper = document.getElementById('canvasWrapper');
+
+            const W = 900;
+            const H = 520;
+            canvas.width = W;
+            canvas.height = H;
+
+            // 传感器几何参数
+            const sensorModuleX = W / 2; // 模块中心X
+            const sensorY = 160; // 传感器安装高度（Y坐标，越小越高）
+            const groundY = 350; // 地面Y坐标
+            const emitterX = sensorModuleX - 10; // 发射管X
+            const receiverX = sensorModuleX + 10; // 接收管X
+            const beamLength = groundY - sensorY + 10; // 光束长度
+
+            // 地面黑线参数
+            let blackLineX = W / 2; // 黑线中心X
+            const blackLineWidth = 22; // 黑线宽度
+            const spotRadius = 14; // 光斑半径
+
+            // 传感器特性
+            const sigma = 9; // 高斯权重，决定过渡平滑度
+            const threshold = 0.45; // 比较器阈值 (归一化反射率0~1)
+
+            // 动态变量
+            let isPaused = false;
+            let speed = 80; // 黑线移动速度 px/s
+            let time = 0;
+            let lastTime = performance.now();
+            let reflectance = 0; // 当前反射率 0~1
+            let outputHigh = false; // 数字输出
+
+            // 波形历史
+            const waveformLength = 220;
+            const waveform = new Array(waveformLength).fill(0);
+            let waveformIndex = 0;
+            let lastWaveformTime = 0;
+
+            // 初始化黑线位置
+            function resetBlackLine() {
+                blackLineX = W / 2;
+            }
+
+            // 计算反射率：基于光斑中心与黑线中心的距离
+            function computeReflectance(spotCenterX) {
+                const d = Math.abs(spotCenterX - blackLineX);
+                // 使用高斯型衰减，白区反射率1，黑线中心反射率接近0
+                const raw = Math.exp(-(d * d) / (2 * sigma * sigma));
+                // 黑线区域最小反射率约0.1，模拟不完全吸收
+                return 0.1 + 0.9 * raw;
+            }
+
+            // 更新状态
+            function update(dt) {
+                // 移动黑线
+                blackLineX += speed * dt;
+                // 循环边界
+                if (blackLineX > W + 100) blackLineX = -100;
+                if (blackLineX < -100) blackLineX = W + 100;
+
+                // 光斑中心即发射管正下方
+                const spotX = emitterX;
+                reflectance = computeReflectance(spotX);
+
+                // 比较器输出
+                outputHigh = reflectance > threshold;
+
+                // 更新波形
+                waveform[waveformIndex % waveformLength] = reflectance;
+                waveformIndex++;
+            }
+
+            // ==================== 绘制 ====================
+            function drawBackground() {
+                // 深色背景
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, W, H);
+                // 网格线
+                ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < W; i += 40) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, H);
+                    ctx.stroke();
+                }
+                for (let j = 0; j < H; j += 40) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, j);
+                    ctx.lineTo(W, j);
+                    ctx.stroke();
+                }
+            }
+
+            function drawGround() {
+                // 地面白色区域
+                const groundRectY = groundY - 30;
+                const groundHeight = 70;
+                ctx.fillStyle = '#f1f5f9';
+                ctx.fillRect(0, groundRectY, W, groundHeight);
+
+                // 地面纹理
+                ctx.fillStyle = 'rgba(0,0,0,0.02)';
+                for (let i = 0; i < 300; i++) {
+                    const px = (i * 137 + 59) % W;
+                    const py = groundRectY + (i * 73 + 23) % groundHeight;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 0.6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // 黑线
+                ctx.fillStyle = '#1e1e1e';
+                ctx.fillRect(blackLineX - blackLineWidth / 2, groundRectY, blackLineWidth, groundHeight);
+
+                // 黑线边缘轻微模糊
+                const gradLeft = ctx.createLinearGradient(blackLineX - blackLineWidth / 2 - 6, 0, blackLineX - blackLineWidth /
+                    2 + 2, 0);
+                gradLeft.addColorStop(0, 'rgba(0,0,0,0)');
+                gradLeft.addColorStop(1, 'rgba(0,0,0,0.3)');
+                ctx.fillStyle = gradLeft;
+                ctx.fillRect(blackLineX - blackLineWidth / 2 - 6, groundRectY, 8, groundHeight);
+
+                const gradRight = ctx.createLinearGradient(blackLineX + blackLineWidth / 2 - 2, 0, blackLineX + blackLineWidth /
+                    2 + 6, 0);
+                gradRight.addColorStop(0, 'rgba(0,0,0,0.3)');
+                gradRight.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = gradRight;
+                ctx.fillRect(blackLineX + blackLineWidth / 2 - 2, groundRectY, 8, groundHeight);
+
+                // 地面标线
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, groundRectY);
+                ctx.lineTo(W, groundRectY);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, groundRectY + groundHeight);
+                ctx.lineTo(W, groundRectY + groundHeight);
+                ctx.stroke();
+            }
+
+            function drawSensorModule() {
+                // 模块外壳
+                const moduleWidth = 36;
+                const moduleHeight = 26;
+                const moduleY = sensorY - moduleHeight / 2;
+                ctx.fillStyle = '#334155';
+                ctx.beginPath();
+                ctx.roundRect(sensorModuleX - moduleWidth / 2, moduleY, moduleWidth, moduleHeight, 6);
+                ctx.fill();
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                // 发射管 (红色LED)
+                const emitterCenterX = emitterX;
+                const emitterCenterY = sensorY;
+                ctx.fillStyle = '#7f1d1d';
+                ctx.beginPath();
+                ctx.arc(emitterCenterX, emitterCenterY, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(emitterCenterX, emitterCenterY, 4.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(emitterCenterX - 1, emitterCenterY - 1.5, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ef4444';
+                ctx.shadowColor = '#ef4444';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.arc(emitterCenterX, emitterCenterY, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // 接收管 (光电晶体管)
+                const receiverCenterX = receiverX;
+                const receiverCenterY = sensorY;
+                ctx.fillStyle = '#1e3a5f';
+                ctx.beginPath();
+                ctx.arc(receiverCenterX, receiverCenterY, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#3b82f6';
+                ctx.beginPath();
+                ctx.arc(receiverCenterX, receiverCenterY, 4.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(receiverCenterX - 1, receiverCenterY - 1.5, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 标签
+                ctx.fillStyle = '#e2e8f0';
+                ctx.font = 'bold 8px "PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('红外LED', emitterCenterX, sensorY + 16);
+                ctx.fillText('接收管', receiverCenterX, sensorY + 16);
+            }
+
+            function drawBeams() {
+                const spotX = emitterX;
+                const spotY = groundY;
+
+                // 发射光束 (锥形)
+                const beamTopX = emitterX;
+                const beamTopY = sensorY + 7;
+                const beamHalfAngle = 0.35; // 半角约20度
+                const leftAngle = Math.PI / 2 + beamHalfAngle;
+                const rightAngle = Math.PI / 2 - beamHalfAngle;
+                const beamLen = groundY - sensorY - 5;
+
+                // 光束多边形
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.12)';
+                ctx.beginPath();
+                ctx.moveTo(beamTopX, beamTopY);
+                ctx.lineTo(beamTopX + Math.cos(leftAngle) * beamLen, beamTopY + Math.sin(leftAngle) * beamLen);
+                ctx.lineTo(beamTopX + Math.cos(rightAngle) * beamLen, beamTopY + Math.sin(rightAngle) * beamLen);
+                ctx.closePath();
+                ctx.fill();
+
+                // 光束中心线
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.35)';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([6, 4]);
+                ctx.beginPath();
+                ctx.moveTo(beamTopX, beamTopY);
+                ctx.lineTo(spotX, spotY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // 光斑
+                const spotAlpha = 0.25 + reflectance * 0.4;
+                const spotGrad = ctx.createRadialGradient(spotX, spotY, 0, spotX, spotY, spotRadius);
+                spotGrad.addColorStop(0, `rgba(255,100,100,${spotAlpha})`);
+                spotGrad.addColorStop(0.6, `rgba(255,80,80,${spotAlpha * 0.7})`);
+                spotGrad.addColorStop(1, 'rgba(255,60,60,0)');
+                ctx.fillStyle = spotGrad;
+                ctx.beginPath();
+                ctx.arc(spotX, spotY, spotRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 反射光束
+                const refTopX = receiverX;
+                const refTopY = sensorY - 7;
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
+                ctx.beginPath();
+                ctx.moveTo(refTopX, refTopY);
+                const refLeftAngle = -Math.PI / 2 + beamHalfAngle;
+                const refRightAngle = -Math.PI / 2 - beamHalfAngle;
+                ctx.lineTo(spotX + Math.cos(refLeftAngle) * beamLen * 0.7, spotY + Math.sin(refLeftAngle) * beamLen * 0.7);
+                ctx.lineTo(spotX + Math.cos(refRightAngle) * beamLen * 0.7, spotY + Math.sin(refRightAngle) * beamLen * 0.7);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(59, 130, 246, 0.3)';
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash([5, 4]);
+                ctx.beginPath();
+                ctx.moveTo(refTopX, refTopY);
+                ctx.lineTo(spotX, spotY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            function drawSignalIndicators() {
+                // 反射强度条
+                const barX = W - 80;
+                const barY = 50;
+                const barWidth = 16;
+                const barHeight = 180;
+                const filledHeight = barHeight * reflectance;
+
+                ctx.fillStyle = '#1e293b';
+                ctx.beginPath();
+                ctx.roundRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4, 6);
+                ctx.fill();
+
+                const barGrad = ctx.createLinearGradient(0, barY + barHeight, 0, barY);
+                barGrad.addColorStop(0, '#4fdf80');
+                barGrad.addColorStop(0.5, '#facc15');
+                barGrad.addColorStop(1, '#ef4444');
+                ctx.fillStyle = barGrad;
+                ctx.beginPath();
+                ctx.roundRect(barX, barY + barHeight - filledHeight, barWidth, filledHeight, 4);
+                ctx.fill();
+
+                // 阈值线
+                const threshY = barY + barHeight * (1 - threshold);
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 3]);
+                ctx.beginPath();
+                ctx.moveTo(barX - 8, threshY);
+                ctx.lineTo(barX + barWidth + 8, threshY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#fff';
+                ctx.font = '9px "PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText('阈值', barX - 12, threshY + 3);
+
+                // 标签
+                ctx.textAlign = 'center';
+                ctx.fillText('反射率', barX + barWidth / 2, barY - 14);
+                ctx.fillText('100%', barX + barWidth / 2, barY - 2);
+                ctx.fillText('0%', barX + barWidth / 2, barY + barHeight + 14);
+            }
+
+            function drawWaveform() {
+                const wfX = 40;
+                const wfY = H - 110;
+                const wfWidth = W - 160;
+                const wfHeight = 80;
+                const baselineY = wfY + wfHeight;
+
+                // 背景
+                ctx.fillStyle = '#0f172a';
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(wfX - 2, wfY - 2, wfWidth + 4, wfHeight + 4, 6);
+                ctx.fill();
+                ctx.stroke();
+
+                // 网格
+                ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                for (let i = 0; i <= 4; i++) {
+                    const y = wfY + (wfHeight / 4) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(wfX, y);
+                    ctx.lineTo(wfX + wfWidth, y);
+                    ctx.stroke();
+                }
+                // 阈值线
+                const threshWfY = baselineY - wfHeight * threshold;
+                ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                ctx.setLineDash([3, 4]);
+                ctx.beginPath();
+                ctx.moveTo(wfX, threshWfY);
+                ctx.lineTo(wfX + wfWidth, threshWfY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#fff';
+                ctx.font = '9px "PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('阈值', wfX + wfWidth + 4, threshWfY + 3);
+
+                // 波形曲线
+                if (waveform.length < 2) return;
+                ctx.strokeStyle = '#facc15';
+                ctx.lineWidth = 2;
+                ctx.shadowColor = '#facc15';
+                ctx.shadowBlur = 6;
+                ctx.beginPath();
+                const startIdx = (waveformIndex - Math.min(waveformLength, waveformIndex)) % waveformLength;
+                for (let i = 0; i < waveformLength; i++) {
+                    const idx = (startIdx + i) % waveformLength;
+                    const val = waveform[idx] || 0;
+                    const x = wfX + (i / (waveformLength - 1)) * wfWidth;
+                    const y = baselineY - val * wfHeight;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // 标签
+                ctx.fillStyle = '#94a3b8';
+                ctx.textAlign = 'center';
+                ctx.fillText('反射光强度波形 (时间 →)', wfX + wfWidth / 2, wfY - 8);
+                ctx.fillText('高', wfX - 18, wfY + 8);
+                ctx.fillText('低', wfX - 18, baselineY - 4);
+            }
+
+            function drawComparisonIndicator() {
+                // 比较器原理示意
+                const compX = 70;
+                const compY = 50;
+                ctx.fillStyle = 'rgba(255,255,255,0.06)';
+                ctx.beginPath();
+                ctx.roundRect(compX, compY, 120, 70, 8);
+                ctx.fill();
+                ctx.fillStyle = '#cbd5e1';
+                ctx.font = 'bold 9px "PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('比较器', compX + 60, compY + 14);
+                ctx.fillText('参考电压 2.5V', compX + 60, compY + 32);
+                ctx.fillText(outputHigh ? '输出: 高电平' : '输出: 低电平', compX + 60, compY + 52);
+                ctx.fillStyle = outputHigh ? '#4fdf80' : '#ef4444';
+                ctx.beginPath();
+                ctx.arc(compX + 15, compY + 45, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = outputHigh ? '#4fdf80' : '#ef4444';
+                ctx.shadowColor = outputHigh ? '#4fdf80' : '#ef4444';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(compX + 15, compY + 45, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            function render() {
+                drawBackground();
+                drawGround();
+                drawSensorModule();
+                drawBeams();
+                drawSignalIndicators();
+                drawWaveform();
+                drawComparisonIndicator();
+
+                // 暂停覆盖
+                if (isPaused) {
+                    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                    ctx.fillRect(0, 0, W, H);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 26px "PingFang SC","Microsoft YaHei",sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('⏸ 已暂停', W / 2, H / 2);
+                }
+            }
+
+            // ==================== UI 更新 ====================
+            function updateUI() {
+                const led = document.getElementById('outputLed');
+                const levelText = document.getElementById('levelText');
+                const intensityEl = document.getElementById('intensityValue');
+
+                led.classList.remove('on-high', 'on-low');
+                if (outputHigh) {
+                    led.classList.add('on-high');
+                    levelText.textContent = '高电平 (白)';
+                    levelText.style.color = '#4fdf80';
+                } else {
+                    led.classList.add('on-low');
+                    levelText.textContent = '低电平 (黑)';
+                    levelText.style.color = '#ef4444';
+                }
+                intensityEl.textContent = Math.round(reflectance * 100) + '%';
+            }
+
+            // ==================== 动画循环 ====================
+            function animate(timestamp) {
+                if (!lastTime) lastTime = timestamp;
+                let dt = (timestamp - lastTime) / 1000;
+                if (dt <= 0) dt = 0.016;
+                if (dt > 0.1) dt = 0.1;
+                lastTime = timestamp;
+
+                if (!isPaused) {
+                    update(dt);
+                    updateUI();
+                }
+
+                render();
+                requestAnimationFrame(animate);
+            }
+
+            // ==================== 事件 ====================
+            canvas.addEventListener('click', () => {
+                isPaused = !isPaused;
+                document.getElementById('pauseBtn').classList.toggle('active', isPaused);
+                if (!isPaused) lastTime = performance.now();
+            });
+            wrapper.addEventListener('click', (e) => {
+                if (e.target === canvas) return;
+                isPaused = !isPaused;
+                document.getElementById('pauseBtn').classList.toggle('active', isPaused);
+                if (!isPaused) lastTime = performance.now();
+            });
+
+            document.getElementById('pauseBtn').addEventListener('click', () => {
+                isPaused = !isPaused;
+                document.getElementById('pauseBtn').classList.toggle('active', isPaused);
+                if (!isPaused) lastTime = performance.now();
+            });
+
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                resetBlackLine();
+                waveform.fill(0);
+                waveformIndex = 0;
+                lastTime = performance.now();
+            });
+
+            const speedSlider = document.getElementById('speedSlider');
+            speedSlider.addEventListener('input', () => {
+                speed = parseInt(speedSlider.value, 10);
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    isPaused = !isPaused;
+                    document.getElementById('pauseBtn').classList.toggle('active', isPaused);
+                    if (!isPaused) lastTime = performance.now();
+                }
+                if (e.code === 'KeyR') {
+                    resetBlackLine();
+                    waveform.fill(0);
+                    waveformIndex = 0;
+                    lastTime = performance.now();
+                }
+            });
+
+            // 响应式缩放
+            function handleResize() {
+                const maxW = Math.min(window.innerWidth * 0.94, 900);
+                const maxH = Math.min(window.innerHeight * 0.62, 520);
+                const scale = Math.min(maxW / W, maxH / H);
+                canvas.style.width = (W * scale) + 'px';
+                canvas.style.height = (H * scale) + 'px';
+            }
+            window.addEventListener('resize', handleResize);
+            handleResize();
+
+            // 启动
+            updateUI();
+            requestAnimationFrame(animate);
+        })();
+    </script>
+</body>
+</html>

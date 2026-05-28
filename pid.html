@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小车循线原理演示 · PID波形窗口</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel-bg: rgba(15, 23, 42, 0.92);
+            --text: #e2e8f0;
+            --accent: #38bdf8;
+            --accent2: #f472b6;
+            --slider-track: #334155;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 10px 30px;
+            width: 100%;
+            max-width: 960px;
+        }
+
+        .title-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .title-row h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.3px;
+            text-align: center;
+        }
+        .badge {
+            font-size: 0.7rem;
+            background: var(--accent);
+            color: #000;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.55),
+                0 0 0 2px var(--border),
+                0 0 100px rgba(56, 189, 248, 0.08);
+            cursor: pointer;
+            transition: box-shadow 0.4s;
+            background: #0b1622;
+        }
+        .canvas-wrapper:hover {
+            box-shadow:
+                0 24px 72px rgba(0, 0, 0, 0.6),
+                0 0 0 2px rgba(255, 255, 255, 0.12),
+                0 0 140px rgba(56, 189, 248, 0.14);
+        }
+        canvas {
+            display: block;
+            max-width: 94vw;
+            max-height: 60vh;
+            height: auto;
+            width: 100%;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px 20px;
+            width: 100%;
+            max-width: 860px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            align-items: flex-start;
+            justify-content: center;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .panel-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 120px;
+        }
+        .panel-section.controls {
+            flex: 1 1 320px;
+            min-width: 260px;
+        }
+        .panel-section.sensors {
+            flex: 0 0 auto;
+            align-items: center;
+        }
+        .panel-section.data {
+            flex: 0 0 auto;
+            min-width: 100px;
+            align-items: flex-end;
+        }
+
+        .section-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #94a3b8;
+            margin-bottom: 2px;
+            font-weight: 600;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: #cbd5e1;
+        }
+        .slider-group label {
+            width: 28px;
+            font-weight: 600;
+            color: #e2e8f0;
+            text-align: right;
+            flex-shrink: 0;
+            font-size: 0.7rem;
+        }
+        .slider-group input[type="range"] {
+            -webkit-appearance: none;
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--slider-track);
+            outline: none;
+            cursor: pointer;
+        }
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid var(--accent);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+            transition: box-shadow 0.2s;
+        }
+        .slider-group input[type="range"]::-webkit-slider-thumb:hover {
+            box-shadow: 0 0 18px rgba(56, 189, 248, 0.55);
+        }
+        .slider-value {
+            width: 36px;
+            text-align: left;
+            font-size: 0.7rem;
+            color: #fff;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+            flex-shrink: 0;
+        }
+
+        .sensor-leds {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .sensor-led {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #334155;
+            transition: all 0.15s ease;
+            box-shadow: 0 0 0px rgba(0, 0, 0, 0);
+            position: relative;
+        }
+        .sensor-led.active {
+            background: #4fdf80;
+            box-shadow: 0 0 12px #4fdf80, 0 0 28px rgba(79, 223, 128, 0.5);
+            animation: led-pulse 0.8s ease-in-out;
+        }
+        .sensor-led.partial {
+            background: #facc15;
+            box-shadow: 0 0 8px #facc15, 0 0 16px rgba(250, 204, 21, 0.4);
+        }
+        @keyframes led-pulse {
+            0%,
+            100% {
+                box-shadow: 0 0 12px #4fdf80, 0 0 28px rgba(79, 223, 128, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 20px #4fdf80, 0 0 40px rgba(79, 223, 128, 0.75);
+            }
+        }
+
+        .data-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+        .data-value {
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.85rem;
+            font-variant-numeric: tabular-nums;
+            font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+        }
+        .data-value.error-pos {
+            color: #f472b6;
+        }
+        .data-value.error-neg {
+            color: #38bdf8;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 7px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.04);
+            color: #e2e8f0;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.35);
+        }
+        .btn.active-preset {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+
+        .hint-text {
+            font-size: 0.65rem;
+            color: #64748b;
+            text-align: center;
+            letter-spacing: 0.4px;
+        }
+        .legend-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .legend-dot.green {
+            background: #4fdf80;
+            box-shadow: 0 0 6px #4fdf80;
+        }
+        .legend-dot.yellow {
+            background: #facc15;
+            box-shadow: 0 0 6px #facc15;
+        }
+        .legend-dot.gray {
+            background: #475569;
+        }
+
+        /* 新增：PID参数说明卡片 */
+        .pid-info {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid var(--accent);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.65rem;
+            color: #cbd5e1;
+            line-height: 1.6;
+            margin-top: 4px;
+        }
+        .pid-info strong {
+            color: #fff;
+        }
+
+        @media (max-width: 640px) {
+            .panel {
+                padding: 12px 14px;
+                gap: 12px;
+            }
+            .panel-section.controls {
+                flex: 1 1 100%;
+            }
+            .slider-group label {
+                width: 22px;
+                font-size: 0.65rem;
+            }
+            .slider-value {
+                width: 28px;
+                font-size: 0.65rem;
+            }
+            .sensor-led {
+                width: 13px;
+                height: 13px;
+            }
+            canvas {
+                max-height: 45vh;
+            }
+            .pid-info {
+                font-size: 0.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="title-row">
+            <h1>🔍 小车循线原理</h1>
+            <span class="badge">PID控制 + 波形</span>
+        </div>
+
+        <div class="canvas-wrapper" id="canvasWrapper">
+            <canvas id="mainCanvas"></canvas>
+        </div>
+
+        <div class="panel">
+            <!-- PID 控制参数 -->
+            <div class="panel-section controls">
+                <span class="section-label">⚙️ PID 参数调节</span>
+                <div class="slider-group">
+                    <label>Kp</label>
+                    <input type="range" id="kpSlider" min="0" max="2" step="0.01" value="0.75">
+                    <span class="slider-value" id="kpValue">0.75</span>
+                </div>
+                <div class="slider-group">
+                    <label>Ki</label>
+                    <input type="range" id="kiSlider" min="0" max="0.5" step="0.005" value="0.03">
+                    <span class="slider-value" id="kiValue">0.03</span>
+                </div>
+                <div class="slider-group">
+                    <label>Kd</label>
+                    <input type="range" id="kdSlider" min="0" max="0.4" step="0.005" value="0.06">
+                    <span class="slider-value" id="kdValue">0.06</span>
+                </div>
+                <div class="slider-group">
+                    <label>速</label>
+                    <input type="range" id="speedSlider" min="40" max="320" step="5" value="160">
+                    <span class="slider-value" id="speedValue">160</span>
+                </div>
+                <div class="btn-row" style="margin-top:2px;">
+                    <button class="btn active-preset" data-preset="balanced">平衡</button>
+                    <button class="btn" data-preset="aggressive">激进</button>
+                    <button class="btn" data-preset="smooth">平滑</button>
+                    <button class="btn" data-preset="oscillate">震荡</button>
+                    <button class="btn" id="resetBtn">↺ 重置</button>
+                </div>
+                <!-- 新增 PID 参数说明 -->
+                <div class="pid-info">
+                    <strong>📘 PID 参数含义</strong><br>
+                    <strong>P (比例)：</strong>当前误差的放大倍数，决定转向响应速度。过大易震荡。<br>
+                    <strong>I (积分)：</strong>过去误差的累积，消除稳态偏差，使小车对准中线。过大易超调。<br>
+                    <strong>D (微分)：</strong>误差变化率，抑制震荡，提高稳定性，提前减速。
+                </div>
+            </div>
+
+            <!-- 传感器状态 -->
+            <div class="panel-section sensors">
+                <span class="section-label">📡 传感器阵列 (S1-S5)</span>
+                <div class="sensor-leds" id="sensorLeds">
+                    <span class="sensor-led" data-idx="0" title="S1 最左"></span>
+                    <span class="sensor-led" data-idx="1" title="S2 左"></span>
+                    <span class="sensor-led" data-idx="2" title="S3 中间"></span>
+                    <span class="sensor-led" data-idx="3" title="S4 右"></span>
+                    <span class="sensor-led" data-idx="4" title="S5 最右"></span>
+                </div>
+                <span style="font-size:0.6rem;color:#64748b;text-align:center;">
+                    <span class="legend-dot green"></span>检测到线 &nbsp;
+                    <span class="legend-dot yellow"></span>部分检测 &nbsp;
+                    <span class="legend-dot gray"></span>未检测
+                </span>
+            </div>
+
+            <!-- 实时数据 -->
+            <div class="panel-section data">
+                <span class="section-label">📊 实时数据</span>
+                <div class="data-row">
+                    误差:<span class="data-value" id="errorDisplay">0.00</span>
+                </div>
+                <div class="data-row">
+                    转向角:<span class="data-value" id="steerDisplay">0.0°</span>
+                </div>
+                <div class="data-row">
+                    积分:<span class="data-value" id="integralDisplay">0.00</span>
+                </div>
+                <div class="data-row">
+                    曲率:<span class="data-value" id="curvDisplay2">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="hint-text">
+            🖱️ 点击画布暂停/继续 &nbsp;|&nbsp; 拖动滑块实时调整PID参数 &nbsp;|&nbsp; 观察传感器如何检测赛道中心线
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('mainCanvas');
+            const ctx = canvas.getContext('2d');
+            const wrapper = document.getElementById('canvasWrapper');
+
+            // Canvas 内部分辨率
+            const W = 900;
+            const H = 580;
+            canvas.width = W;
+            canvas.height = H;
+
+            // ==================== 赛道定义 ====================
+            const trackCx = W / 2;
+            const trackCy = H / 2;
+
+            function radiusFn(theta) {
+                return 175 +
+                    38 * Math.sin(2 * theta) +
+                    26 * Math.cos(3 * theta + 0.5) +
+                    20 * Math.sin(4 * theta - 0.3) +
+                    14 * Math.cos(5 * theta + 0.8) +
+                    10 * Math.sin(6 * theta + 0.2);
+            }
+
+            function radiusDerivative(theta) {
+                return 38 * 2 * Math.cos(2 * theta) -
+                    26 * 3 * Math.sin(3 * theta + 0.5) -
+                    20 * 4 * Math.cos(4 * theta - 0.3) -
+                    14 * 5 * Math.sin(5 * theta + 0.8) +
+                    10 * 6 * Math.cos(6 * theta + 0.2);
+            }
+
+            function getTrackPoint(theta) {
+                const r = radiusFn(theta);
+                return { x: trackCx + r * Math.cos(theta), y: trackCy + r * Math.sin(theta), r, theta };
+            }
+
+            function getTrackTangent(theta) {
+                const r = radiusFn(theta);
+                const dr = radiusDerivative(theta);
+                const dx = dr * Math.cos(theta) - r * Math.sin(theta);
+                const dy = dr * Math.sin(theta) + r * Math.cos(theta);
+                return Math.atan2(dy, dx);
+            }
+
+            // 预采样赛道
+            const NUM_TRACK_SAMPLES = 2000;
+            const trackSamples = [];
+            const trackCumLengths = [];
+            let trackTotalLength = 0;
+
+            function buildTrackSamples() {
+                trackSamples.length = 0;
+                trackCumLengths.length = 0;
+                trackTotalLength = 0;
+                for (let i = 0; i <= NUM_TRACK_SAMPLES; i++) {
+                    const theta = (i / NUM_TRACK_SAMPLES) * 2 * Math.PI;
+                    const pt = getTrackPoint(theta);
+                    const phi = getTrackTangent(theta);
+                    trackSamples.push({ ...pt, phi, idx: i });
+                }
+                trackCumLengths.push(0);
+                for (let i = 1; i < trackSamples.length; i++) {
+                    const dx = trackSamples[i].x - trackSamples[i - 1].x;
+                    const dy = trackSamples[i].y - trackSamples[i - 1].y;
+                    const seg = Math.sqrt(dx * dx + dy * dy);
+                    trackTotalLength += seg;
+                    trackCumLengths.push(trackTotalLength);
+                }
+            }
+            buildTrackSamples();
+
+            function getPositionOnTrack(arcLen) {
+                let s = ((arcLen % trackTotalLength) + trackTotalLength) % trackTotalLength;
+                let lo = 0,
+                    hi = trackCumLengths.length - 1;
+                while (lo < hi - 1) {
+                    const mid = (lo + hi) >> 1;
+                    if (trackCumLengths[mid] <= s) lo = mid;
+                    else hi = mid;
+                }
+                const s0 = trackCumLengths[lo];
+                const s1 = trackCumLengths[hi];
+                const t = (s1 - s0 > 0.0001) ? (s - s0) / (s1 - s0) : 0;
+                const a = trackSamples[lo];
+                const b = trackSamples[hi];
+                const x = a.x + (b.x - a.x) * t;
+                const y = a.y + (b.y - a.y) * t;
+                let dPhi = b.phi - a.phi;
+                while (dPhi > Math.PI) dPhi -= 2 * Math.PI;
+                while (dPhi < -Math.PI) dPhi += 2 * Math.PI;
+                const phi = a.phi + dPhi * t;
+                return { x, y, phi, arcLen: s, sampleIdx: lo };
+            }
+
+            // 计算曲率
+            function getCurvatureAtSample(idx) {
+                const win = 20;
+                const i0 = Math.max(0, idx - win);
+                const i1 = Math.min(trackSamples.length - 1, idx + win);
+                const ds = trackCumLengths[i1] - trackCumLengths[i0];
+                if (ds < 1) return 0;
+                let dPhi = trackSamples[i1].phi - trackSamples[i0].phi;
+                while (dPhi > Math.PI) dPhi -= 2 * Math.PI;
+                while (dPhi < -Math.PI) dPhi += 2 * Math.PI;
+                return Math.abs(dPhi / ds);
+            }
+
+            // 世界坐标到赛道中心线距离
+            function distToTrackCenter(wx, wy) {
+                const dx = wx - trackCx;
+                const dy = wy - trackCy;
+                const rSensor = Math.sqrt(dx * dx + dy * dy);
+                const thetaSensor = Math.atan2(dy, dx);
+                const rTrack = radiusFn(thetaSensor);
+                return rSensor - rTrack;
+            }
+
+            // ==================== 小车状态 ====================
+            const CAR_LENGTH = 48;
+            const CAR_WIDTH = 26;
+            const WHEELBASE = 30; // 轴距
+            const SENSOR_FORWARD = 18; // 传感器阵列在前轴前方距离
+            const SENSOR_SPACING = 4.8; // 传感器间距
+            const NUM_SENSORS = 5;
+            const SENSOR_THRESHOLD = 5.5; // 检测阈值(线宽一半+余量)
+            const MAX_STEER_ANGLE = 38 * Math.PI / 180; // 最大转向角38度
+
+            let carX, carY, carTheta; // 小车位姿
+            let carArcLen = 0;
+            let totalDist = 0;
+            let wheelRotation = 0;
+            let integralError = 0;
+            let prevError = 0;
+            let isPaused = false;
+            let lastTime = performance.now();
+
+            // PID参数
+            let Kp = 0.75;
+            let Ki = 0.03;
+            let Kd = 0.06;
+            let targetSpeed = 160;
+
+            // 传感器读数(连续值0~1)
+            let sensorReadings = new Array(NUM_SENSORS).fill(0);
+            let currentError = 0;
+            let currentSteerAngle = 0;
+
+            // 新增：波形历史记录
+            const WAVEFORM_MAX = 180;
+            const errorHistory = new Array(WAVEFORM_MAX).fill(0);
+            const steerHistory = new Array(WAVEFORM_MAX).fill(0);
+            let waveformIndex = 0;
+
+            function resetCar() {
+                const pos = getPositionOnTrack(0);
+                carX = pos.x;
+                carY = pos.y;
+                carTheta = pos.phi;
+                carArcLen = 0;
+                totalDist = 0;
+                wheelRotation = 0;
+                integralError = 0;
+                prevError = 0;
+                currentSteerAngle = 0;
+                sensorReadings.fill(0);
+                currentError = 0;
+                // 清空波形
+                errorHistory.fill(0);
+                steerHistory.fill(0);
+                waveformIndex = 0;
+            }
+
+            // 初始放置
+            function initCarPlacement() {
+                const pos = getPositionOnTrack(0);
+                carX = pos.x;
+                carY = pos.y;
+                carTheta = pos.phi;
+                carArcLen = 0;
+                totalDist = 0;
+                wheelRotation = 0;
+                integralError = 0;
+                prevError = 0;
+                currentSteerAngle = 0;
+                sensorReadings.fill(0);
+                currentError = 0;
+                errorHistory.fill(0);
+                steerHistory.fill(0);
+                waveformIndex = 0;
+            }
+            initCarPlacement();
+
+            // ==================== 传感器检测 ====================
+            function computeSensorPositions() {
+                const positions = [];
+                const cosT = Math.cos(carTheta);
+                const sinT = Math.sin(carTheta);
+                const forwardOffset = WHEELBASE / 2 + SENSOR_FORWARD;
+                for (let i = 0; i < NUM_SENSORS; i++) {
+                    const localY = (i - (NUM_SENSORS - 1) / 2) * SENSOR_SPACING;
+                    const localX = forwardOffset;
+                    const wx = carX + localX * cosT - localY * sinT;
+                    const wy = carY + localX * sinT + localY * cosT;
+                    positions.push({ wx, wy, localX, localY });
+                }
+                return positions;
+            }
+
+            function readSensors() {
+                const positions = computeSensorPositions();
+                const readings = [];
+                let weightedSum = 0;
+                let sumIntensity = 0;
+                for (let i = 0; i < NUM_SENSORS; i++) {
+                    const dist = distToTrackCenter(positions[i].wx, positions[i].wy);
+                    const intensity = Math.max(0, 1 - Math.abs(dist) / SENSOR_THRESHOLD);
+                    readings.push(intensity);
+                    const weight = i - (NUM_SENSORS - 1) / 2;
+                    weightedSum += weight * intensity;
+                    sumIntensity += intensity;
+                }
+                let error = 0;
+                if (sumIntensity > 0.001) {
+                    error = weightedSum / sumIntensity;
+                } else {
+                    error = prevError > 0 ? 2 : (prevError < 0 ? -2 : 0);
+                }
+                const maxWeight = (NUM_SENSORS - 1) / 2;
+                error = error / maxWeight;
+                error = Math.max(-1, Math.min(1, error));
+                return { readings, error, sumIntensity };
+            }
+
+            // ==================== PID控制器 ====================
+            function computeSteerAngle(error, dt) {
+                const pTerm = Kp * error;
+                integralError += error * dt;
+                const rawSteer = pTerm + Ki * integralError + Kd * (error - prevError) / Math.max(dt, 0.001);
+                if (Math.abs(rawSteer) >= MAX_STEER_ANGLE && Math.sign(rawSteer) === Math.sign(error)) {
+                    integralError -= error * dt;
+                }
+                const iTerm = Ki * integralError;
+                const dTerm = (dt > 0.0001) ? Kd * (error - prevError) / dt : 0;
+                let steer = pTerm + iTerm + dTerm;
+                steer = Math.max(-MAX_STEER_ANGLE, Math.min(MAX_STEER_ANGLE, steer));
+                prevError = error;
+                return steer;
+            }
+
+            // ==================== 运动学更新 ====================
+            function updateKinematics(steerAngle, dt) {
+                const speed = targetSpeed;
+                const angularVel = (speed / WHEELBASE) * Math.tan(steerAngle);
+                carTheta += angularVel * dt;
+                carX += speed * Math.cos(carTheta) * dt;
+                carY += speed * Math.sin(carTheta) * dt;
+                totalDist += speed * dt;
+                wheelRotation += speed * dt / 8;
+                carArcLen += speed * dt;
+                if (carArcLen >= trackTotalLength) carArcLen -= trackTotalLength;
+                if (carArcLen < 0) carArcLen += trackTotalLength;
+            }
+
+            // ==================== 绘制函数 ====================
+            function drawBackground() {
+                const grassGrad = ctx.createRadialGradient(trackCx, trackCy, 80, trackCx, trackCy, 520);
+                grassGrad.addColorStop(0, '#4a7c3f');
+                grassGrad.addColorStop(0.55, '#3d6834');
+                grassGrad.addColorStop(1, '#254520');
+                ctx.fillStyle = grassGrad;
+                ctx.fillRect(0, 0, W, H);
+
+                ctx.fillStyle = 'rgba(120,190,90,0.08)';
+                for (let i = 0; i < 400; i++) {
+                    const sx = ((i * 137 + 59) % W);
+                    const sy = ((i * 251 + 97) % H);
+                    const dx = sx - trackCx;
+                    const dy = sy - trackCy;
+                    const rAt = radiusFn(Math.atan2(dy, dx));
+                    if (Math.abs(Math.sqrt(dx * dx + dy * dy) - rAt) > 38) {
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, 1 + (i % 3) * 0.7, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+
+            function drawTrackSurface() {
+                const N = 1400;
+                ctx.beginPath();
+                for (let i = 0; i <= N; i++) {
+                    const theta = (i / N) * 2 * Math.PI;
+                    const r = radiusFn(theta);
+                    const x = trackCx + r * Math.cos(theta);
+                    const y = trackCy + r * Math.sin(theta);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+
+                const grad = ctx.createLinearGradient(trackCx - 200, trackCy - 140, trackCx + 200, trackCy + 140);
+                grad.addColorStop(0, '#5a5a5a');
+                grad.addColorStop(0.4, '#4a4a4a');
+                grad.addColorStop(0.7, '#3e3e3e');
+                grad.addColorStop(1, '#353535');
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                ctx.fillStyle = 'rgba(0,0,0,0.025)';
+                for (let i = 0; i < 2000; i++) {
+                    const theta = ((i * 173 + 31) % 10000) / 10000 * 2 * Math.PI;
+                    const r = radiusFn(theta);
+                    const offset = ((i * 419 + 73) % 100) / 100 * 44 - 22;
+                    const phi = getTrackTangent(theta);
+                    const nx = -Math.sin(phi);
+                    const ny = Math.cos(phi);
+                    const px = trackCx + r * Math.cos(theta) + offset * nx;
+                    const py = trackCy + r * Math.sin(theta) + offset * ny;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 0.35 + (i % 5) * 0.15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            function drawTrackEdges() {
+                const N = 1600;
+                const halfW = 22;
+                ctx.strokeStyle = '#e8e8e8';
+                ctx.lineWidth = 2.2;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = 'rgba(255,255,255,0.25)';
+                ctx.shadowBlur = 3;
+                for (let side = 0; side < 2; side++) {
+                    const sign = side === 0 ? 1 : -1;
+                    ctx.beginPath();
+                    for (let i = 0; i <= N; i++) {
+                        const theta = (i / N) * 2 * Math.PI;
+                        const r = radiusFn(theta);
+                        const phi = getTrackTangent(theta);
+                        const nx = -Math.sin(phi);
+                        const ny = Math.cos(phi);
+                        const x = trackCx + r * Math.cos(theta) + sign * halfW * nx;
+                        const y = trackCy + r * Math.sin(theta) + sign * halfW * ny;
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+                }
+                ctx.shadowBlur = 0;
+            }
+
+            function drawTrackCenterline() {
+                const dashLen = 12;
+                const gapLen = 16;
+                const cycle = dashLen + gapLen;
+                const numDashes = Math.floor(trackTotalLength / cycle);
+                ctx.strokeStyle = '#f5c842';
+                ctx.lineWidth = 1.8;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = 'rgba(245,200,66,0.35)';
+                ctx.shadowBlur = 3;
+                for (let i = 0; i < numDashes; i++) {
+                    const s0 = i * cycle;
+                    const s1 = s0 + dashLen;
+                    if (s1 > trackTotalLength) break;
+                    const p0 = getPositionOnTrack(s0);
+                    const p1 = getPositionOnTrack(s1);
+                    ctx.beginPath();
+                    ctx.moveTo(p0.x, p0.y);
+                    ctx.lineTo(p1.x, p1.y);
+                    ctx.stroke();
+                }
+                ctx.shadowBlur = 0;
+            }
+
+            function drawStartLine() {
+                const pos = getPositionOnTrack(0);
+                const nx = -Math.sin(pos.phi);
+                const ny = Math.cos(pos.phi);
+                const checkerSize = 6;
+                const halfW = 22;
+                const count = Math.floor((halfW * 2) / checkerSize);
+                for (let i = 0; i < count; i++) {
+                    const offset = -halfW + i * checkerSize;
+                    const cx_c = pos.x + offset * nx;
+                    const cy_c = pos.y + offset * ny;
+                    ctx.fillStyle = i % 2 === 0 ? '#fff' : '#1a1a1a';
+                    ctx.fillRect(cx_c - checkerSize / 2, cy_c - checkerSize / 2, checkerSize, checkerSize);
+                }
+            }
+
+            function drawSensorBeams(sensorPositions, readings) {
+                for (let i = 0; i < sensorPositions.length; i++) {
+                    const { wx, wy } = sensorPositions[i];
+                    const intensity = readings[i];
+                    const alpha = 0.25 + intensity * 0.55;
+                    const radius = 3 + intensity * 5;
+                    if (intensity > 0.01) {
+                        const grad = ctx.createRadialGradient(wx, wy, 0, wx, wy, radius);
+                        if (intensity > 0.6) {
+                            grad.addColorStop(0, 'rgba(79,223,128,0.9)');
+                            grad.addColorStop(0.5, 'rgba(79,223,128,0.5)');
+                            grad.addColorStop(1, 'rgba(79,223,128,0)');
+                        } else if (intensity > 0.15) {
+                            grad.addColorStop(0, 'rgba(250,204,21,0.8)');
+                            grad.addColorStop(0.5, 'rgba(250,204,21,0.4)');
+                            grad.addColorStop(1, 'rgba(250,204,21,0)');
+                        } else {
+                            grad.addColorStop(0, 'rgba(200,180,160,0.5)');
+                            grad.addColorStop(1, 'rgba(200,180,160,0)');
+                        }
+                        ctx.fillStyle = grad;
+                        ctx.beginPath();
+                        ctx.arc(wx, wy, radius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    const coreAlpha = 0.5 + intensity * 0.5;
+                    if (intensity > 0.6) {
+                        ctx.fillStyle = `rgba(255,255,255,${coreAlpha})`;
+                    } else if (intensity > 0.15) {
+                        ctx.fillStyle = `rgba(250,204,21,${coreAlpha})`;
+                    } else {
+                        ctx.fillStyle = `rgba(150,140,130,${coreAlpha * 0.6})`;
+                    }
+                    ctx.beginPath();
+                    ctx.arc(wx, wy, 1.8 + intensity * 2.2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            function drawCar(steerAngle) {
+                ctx.save();
+                ctx.translate(carX, carY);
+                ctx.rotate(carTheta);
+
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.roundRect(-CAR_LENGTH / 2 + 3, -CAR_WIDTH / 2 + 3, CAR_LENGTH, CAR_WIDTH, 6);
+                ctx.fill();
+
+                const bodyGrad = ctx.createLinearGradient(0, -CAR_WIDTH / 2, 0, CAR_WIDTH / 2);
+                bodyGrad.addColorStop(0, '#e83e3e');
+                bodyGrad.addColorStop(0.3, '#d63030');
+                bodyGrad.addColorStop(0.7, '#b82222');
+                bodyGrad.addColorStop(1, '#8b1a1a');
+                ctx.fillStyle = bodyGrad;
+                ctx.beginPath();
+                ctx.roundRect(-CAR_LENGTH / 2, -CAR_WIDTH / 2, CAR_LENGTH, CAR_WIDTH, 6);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                ctx.beginPath();
+                ctx.roundRect(-CAR_LENGTH / 2 + 4, -CAR_WIDTH / 2 + 2, CAR_LENGTH - 8, CAR_WIDTH * 0.35, 4);
+                ctx.fill();
+
+                ctx.fillStyle = '#1a3a50';
+                ctx.beginPath();
+                ctx.roundRect(CAR_LENGTH / 2 - 10, -CAR_WIDTH / 2 + 3, 6, CAR_WIDTH - 6, 2.5);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(140,200,240,0.22)';
+                ctx.beginPath();
+                ctx.roundRect(CAR_LENGTH / 2 - 9, -CAR_WIDTH / 2 + 4.5, 2.5, CAR_WIDTH - 9, 1.5);
+                ctx.fill();
+
+                ctx.fillStyle = '#1a3a50';
+                ctx.beginPath();
+                ctx.roundRect(-CAR_LENGTH / 2 + 3, -CAR_WIDTH / 2 + 3, 5, CAR_WIDTH - 6, 2.5);
+                ctx.fill();
+
+                ctx.fillStyle = '#f5f5f5';
+                ctx.beginPath();
+                ctx.arc(CAR_LENGTH / 2 - 8, 0, 3.8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#222';
+                ctx.beginPath();
+                ctx.arc(CAR_LENGTH / 2 - 8, -0.5, 2.6, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#1a1a1a';
+                ctx.beginPath();
+                ctx.moveTo(CAR_LENGTH / 2 - 1, -CAR_WIDTH / 2 - 1.5);
+                ctx.lineTo(CAR_LENGTH / 2 + 4, -CAR_WIDTH / 2 + 1);
+                ctx.lineTo(CAR_LENGTH / 2 + 4, CAR_WIDTH / 2 - 1);
+                ctx.lineTo(CAR_LENGTH / 2 - 1, CAR_WIDTH / 2 + 1.5);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#1a1a1a';
+                ctx.beginPath();
+                ctx.moveTo(-CAR_LENGTH / 2 + 1, -CAR_WIDTH / 2 - 2.5);
+                ctx.lineTo(-CAR_LENGTH / 2 - 4, -CAR_WIDTH / 2);
+                ctx.lineTo(-CAR_LENGTH / 2 - 4, CAR_WIDTH / 2);
+                ctx.lineTo(-CAR_LENGTH / 2 + 1, CAR_WIDTH / 2 + 2.5);
+                ctx.closePath();
+                ctx.fill();
+
+                const wheelPositions = [
+                    { lx: -WHEELBASE / 2, ly: -CAR_WIDTH / 2 - 2, isFront: false },
+                    { lx: -WHEELBASE / 2, ly: CAR_WIDTH / 2 + 2, isFront: false },
+                    { lx: WHEELBASE / 2, ly: -CAR_WIDTH / 2 - 2, isFront: true },
+                    { lx: WHEELBASE / 2, ly: CAR_WIDTH / 2 + 2, isFront: true },
+                ];
+
+                wheelPositions.forEach(wp => {
+                    ctx.save();
+                    ctx.translate(wp.lx, wp.ly);
+                    if (wp.isFront) {
+                        ctx.rotate(steerAngle);
+                    }
+                    ctx.fillStyle = '#111';
+                    ctx.beginPath();
+                    ctx.roundRect(-7, -3.5, 14, 7, 2.5);
+                    ctx.fill();
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 0.6;
+                    ctx.stroke();
+                    ctx.fillStyle = '#555';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#777';
+                    ctx.lineWidth = 0.4;
+                    ctx.stroke();
+                    for (let s = 0; s < 4; s++) {
+                        const sa = wheelRotation + (s / 4) * Math.PI * 2;
+                        ctx.strokeStyle = 'rgba(180,180,180,0.5)';
+                        ctx.lineWidth = 0.6;
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(Math.cos(sa) * 2.2, Math.sin(sa) * 2.2);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                });
+
+                const sensorForward = WHEELBASE / 2 + SENSOR_FORWARD;
+                for (let i = 0; i < NUM_SENSORS; i++) {
+                    const ly = (i - (NUM_SENSORS - 1) / 2) * SENSOR_SPACING;
+                    const sx = sensorForward;
+                    const sy = ly;
+                    const intensity = sensorReadings[i] || 0;
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, 2.8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#444';
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                    if (intensity > 0.6) {
+                        ctx.fillStyle = '#4fdf80';
+                        ctx.shadowColor = '#4fdf80';
+                        ctx.shadowBlur = 6;
+                    } else if (intensity > 0.15) {
+                        ctx.fillStyle = '#facc15';
+                        ctx.shadowColor = '#facc15';
+                        ctx.shadowBlur = 4;
+                    } else {
+                        ctx.fillStyle = '#555';
+                        ctx.shadowBlur = 0;
+                    }
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, 1.6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.font = '5px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('S1', sensorForward, (-(NUM_SENSORS - 1) / 2) * SENSOR_SPACING - 6);
+                ctx.fillText('S5', sensorForward, ((NUM_SENSORS - 1) / 2) * SENSOR_SPACING - 6);
+
+                ctx.restore();
+            }
+
+            function drawErrorIndicator(error) {
+                if (Math.abs(error) < 0.02 && sensorReadings.some(r => r > 0.5)) return;
+                const barX = W / 2;
+                const barY = H - 30;
+                const barW = 200;
+                const barH = 8;
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.beginPath();
+                ctx.roundRect(barX - barW / 2 - 4, barY - barH / 2 - 4, barW + 8, barH + 8, 6);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(barX, barY - barH);
+                ctx.lineTo(barX, barY + barH);
+                ctx.stroke();
+                const indicatorX = barX + (error / 1) * (barW / 2);
+                const clampedX = Math.max(barX - barW / 2, Math.min(barX + barW / 2, indicatorX));
+                ctx.fillStyle = Math.abs(error) > 0.5 ? '#f472b6' : '#38bdf8';
+                ctx.beginPath();
+                ctx.arc(clampedX, barY, barH + 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(clampedX, barY, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                ctx.font = '9px "PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('误差指示', barX, barY - 16);
+                ctx.fillText('左偏', barX - barW / 2 - 22, barY + 3);
+                ctx.fillText('右偏', barX + barW / 2 + 22, barY + 3);
+            }
+
+            function drawMiniLegend() {
+                const lx = 20;
+                const ly = 20;
+                ctx.fillStyle = 'rgba(0,0,0,0.55)';
+                ctx.beginPath();
+                ctx.roundRect(lx, ly, 155, 72, 10);
+                ctx.fill();
+                ctx.fillStyle = '#e2e8f0';
+                ctx.font = '10px "PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('🔍 传感器检测区域', lx + 10, ly + 18);
+                ctx.fillText('🟢 绿色光斑 = 检测到线', lx + 10, ly + 36);
+                ctx.fillText('🟡 黄色光斑 = 部分检测', lx + 10, ly + 52);
+                ctx.fillText('⚫ 暗色光斑 = 未检测', lx + 10, ly + 66);
+            }
+
+            // 新增：绘制PID波形窗口
+            function drawPIDWaveforms() {
+                const wfX = W - 230;
+                const wfY = 10;
+                const wfW = 220;
+                const wfH = 90;
+                const baseY = wfY + wfH;
+
+                // 半透明背景
+                ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(wfX, wfY, wfW, wfH, 8);
+                ctx.fill();
+                ctx.stroke();
+
+                // 零线
+                ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                ctx.beginPath();
+                ctx.moveTo(wfX, baseY - wfH / 2);
+                ctx.lineTo(wfX + wfW, baseY - wfH / 2);
+                ctx.stroke();
+
+                // 标签
+                ctx.fillStyle = '#e2e8f0';
+                ctx.font = 'bold 8px "PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('PID 波形', wfX + 6, wfY + 12);
+                ctx.fillStyle = '#f472b6';
+                ctx.fillText('误差', wfX + 6, wfY + 26);
+                ctx.fillStyle = '#38bdf8';
+                ctx.fillText('转向角', wfX + 6, wfY + 38);
+
+                // 绘制误差曲线 (粉色)
+                ctx.strokeStyle = '#f472b6';
+                ctx.lineWidth = 1.8;
+                ctx.shadowColor = '#f472b6';
+                ctx.shadowBlur = 4;
+                ctx.beginPath();
+                for (let i = 0; i < WAVEFORM_MAX; i++) {
+                    const idx = (waveformIndex - i + WAVEFORM_MAX) % WAVEFORM_MAX;
+                    const val = errorHistory[idx] || 0;
+                    const x = wfX + wfW - (i / (WAVEFORM_MAX - 1)) * wfW;
+                    const y = baseY - wfH / 2 - val * (wfH / 2.2);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // 绘制转向角曲线 (蓝色)
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 1.5;
+                ctx.shadowColor = '#38bdf8';
+                ctx.shadowBlur = 3;
+                ctx.beginPath();
+                for (let i = 0; i < WAVEFORM_MAX; i++) {
+                    const idx = (waveformIndex - i + WAVEFORM_MAX) % WAVEFORM_MAX;
+                    const val = steerHistory[idx] || 0;
+                    const x = wfX + wfW - (i / (WAVEFORM_MAX - 1)) * wfW;
+                    const y = baseY - wfH / 2 - val * (wfH / 1.6);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            // ==================== 主渲染 ====================
+            function render() {
+                ctx.clearRect(0, 0, W, H);
+                drawBackground();
+                drawTrackSurface();
+                drawTrackCenterline();
+                drawTrackEdges();
+                drawStartLine();
+
+                const sensorPositions = computeSensorPositions();
+                drawSensorBeams(sensorPositions, sensorReadings);
+
+                drawCar(currentSteerAngle);
+
+                drawErrorIndicator(currentError);
+
+                drawMiniLegend();
+
+                // 新增：绘制PID波形窗口
+                drawPIDWaveforms();
+
+                if (isPaused) {
+                    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+                    ctx.fillRect(0, 0, W, H);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 28px "PingFang SC","Microsoft YaHei",sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('⏸ 已暂停', W / 2, H / 2);
+                }
+            }
+
+            // ==================== UI更新 ====================
+            function updateSensorLEDs() {
+                const leds = document.querySelectorAll('.sensor-led');
+                leds.forEach((led, i) => {
+                    led.classList.remove('active', 'partial');
+                    const r = sensorReadings[i] || 0;
+                    if (r > 0.6) led.classList.add('active');
+                    else if (r > 0.15) led.classList.add('partial');
+                });
+            }
+
+            function updateDataDisplay() {
+                document.getElementById('errorDisplay').textContent = currentError.toFixed(3);
+                const errEl = document.getElementById('errorDisplay');
+                errEl.classList.remove('error-pos', 'error-neg');
+                if (currentError > 0.05) errEl.classList.add('error-pos');
+                else if (currentError < -0.05) errEl.classList.add('error-neg');
+
+                document.getElementById('steerDisplay').textContent = (currentSteerAngle * 180 / Math.PI).toFixed(1) +
+                    '°';
+                document.getElementById('integralDisplay').textContent = integralError.toFixed(3);
+
+                const pos = getPositionOnTrack(carArcLen);
+                const curv = getCurvatureAtSample(pos.sampleIdx);
+                const curvLabel = curv > 0.04 ? '急弯' : curv > 0.02 ? '中弯' : curv > 0.007 ? '缓弯' : '直道';
+                document.getElementById('curvDisplay2').textContent = curvLabel;
+            }
+
+            function updateSliderDisplays() {
+                document.getElementById('kpValue').textContent = Kp.toFixed(2);
+                document.getElementById('kiValue').textContent = Ki.toFixed(3);
+                document.getElementById('kdValue').textContent = Kd.toFixed(3);
+                document.getElementById('speedValue').textContent = Math.round(targetSpeed);
+            }
+
+            // ==================== 动画循环 ====================
+            function animate(timestamp) {
+                if (!lastTime) lastTime = timestamp;
+                let dt = (timestamp - lastTime) / 1000;
+                if (dt <= 0) dt = 0.016;
+                if (dt > 0.12) dt = 0.12;
+                lastTime = timestamp;
+
+                if (!isPaused) {
+                    const sensorResult = readSensors();
+                    sensorReadings = sensorResult.readings;
+                    currentError = sensorResult.error;
+
+                    currentSteerAngle = computeSteerAngle(currentError, dt);
+
+                    updateKinematics(currentSteerAngle, dt);
+
+                    // 记录波形数据
+                    errorHistory[waveformIndex % WAVEFORM_MAX] = currentError;
+                    steerHistory[waveformIndex % WAVEFORM_MAX] = currentSteerAngle;
+                    waveformIndex++;
+
+                    updateSensorLEDs();
+                    updateDataDisplay();
+                }
+
+                render();
+                requestAnimationFrame(animate);
+            }
+
+            // ==================== 事件处理 ====================
+            canvas.addEventListener('click', (e) => {
+                isPaused = !isPaused;
+                if (!isPaused) lastTime = performance.now();
+            });
+            wrapper.addEventListener('click', (e) => {
+                if (e.target === canvas) return;
+                isPaused = !isPaused;
+                if (!isPaused) lastTime = performance.now();
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    isPaused = !isPaused;
+                    if (!isPaused) lastTime = performance.now();
+                }
+                if (e.code === 'KeyR') {
+                    resetCar();
+                    initCarPlacement();
+                    lastTime = performance.now();
+                }
+            });
+
+            const kpSlider = document.getElementById('kpSlider');
+            const kiSlider = document.getElementById('kiSlider');
+            const kdSlider = document.getElementById('kdSlider');
+            const speedSlider = document.getElementById('speedSlider');
+
+            kpSlider.addEventListener('input', () => {
+                Kp = parseFloat(kpSlider.value);
+                updateSliderDisplays();
+                clearPresetButtons();
+            });
+            kiSlider.addEventListener('input', () => {
+                Ki = parseFloat(kiSlider.value);
+                updateSliderDisplays();
+                clearPresetButtons();
+            });
+            kdSlider.addEventListener('input', () => {
+                Kd = parseFloat(kdSlider.value);
+                updateSliderDisplays();
+                clearPresetButtons();
+            });
+            speedSlider.addEventListener('input', () => {
+                targetSpeed = parseFloat(speedSlider.value);
+                updateSliderDisplays();
+            });
+
+            function clearPresetButtons() {
+                document.querySelectorAll('.btn[data-preset]').forEach(b => b.classList.remove('active-preset'));
+            }
+
+            const presets = {
+                balanced: { Kp: 0.75, Ki: 0.03, Kd: 0.06, speed: 160 },
+                aggressive: { Kp: 1.3, Ki: 0.02, Kd: 0.1, speed: 220 },
+                smooth: { Kp: 0.4, Ki: 0.06, Kd: 0.03, speed: 120 },
+                oscillate: { Kp: 1.8, Ki: 0.0, Kd: 0.0, speed: 180 },
+            };
+
+            document.querySelectorAll('.btn[data-preset]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const preset = presets[btn.dataset.preset];
+                    if (!preset) return;
+                    Kp = preset.Kp;
+                    Ki = preset.Ki;
+                    Kd = preset.Kd;
+                    targetSpeed = preset.speed;
+                    kpSlider.value = Kp;
+                    kiSlider.value = Ki;
+                    kdSlider.value = Kd;
+                    speedSlider.value = targetSpeed;
+                    updateSliderDisplays();
+                    integralError = 0;
+                    prevError = 0;
+                    document.querySelectorAll('.btn[data-preset]').forEach(b => b.classList.remove(
+                        'active-preset'));
+                    btn.classList.add('active-preset');
+                });
+            });
+
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                resetCar();
+                initCarPlacement();
+                integralError = 0;
+                prevError = 0;
+                lastTime = performance.now();
+                updateSliderDisplays();
+                updateSensorLEDs();
+                updateDataDisplay();
+            });
+
+            function handleResize() {
+                const maxW = Math.min(window.innerWidth * 0.94, 900);
+                const maxH = Math.min(window.innerHeight * 0.55, 580);
+                const scale = Math.min(maxW / W, maxH / H);
+                canvas.style.width = (W * scale) + 'px';
+                canvas.style.height = (H * scale) + 'px';
+            }
+            window.addEventListener('resize', handleResize);
+            handleResize();
+
+            updateSliderDisplays();
+            updateSensorLEDs();
+            updateDataDisplay();
+            requestAnimationFrame(animate);
+        })();
+    </script>
+</body>
+</html>
