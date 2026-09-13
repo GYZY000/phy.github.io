@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>【典例1】晾衣篮四绳悬挂（可调节）</title>
+<style>
+  body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:#f7f7f2;
+       display:flex;flex-direction:column;align-items:center;margin:0;padding:14px;}
+  h3{margin:6px 0 10px;}
+  svg{background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15);border-radius:8px;}
+  .panel{margin:12px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;
+         background:#fff;padding:10px 18px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);}
+  input[type=range]{width:165px;}
+  button{padding:6px 14px;cursor:pointer;border:1px solid #888;border-radius:5px;background:#eee;}
+  button:hover{background:#ddd;}
+  #info{background:#fff;padding:8px 22px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);
+        font-size:15px;line-height:1.8;text-align:center;max-width:830px;}
+  .t{color:#d0342c;font-weight:bold;} .fr{color:#e58a2f;font-weight:bold;}
+</style>
+</head>
+<body>
+
+<h3>【典例1】家用晾衣篮 —— 四根等长轻绳对称悬挂（可调节）</h3>
+
+<svg id="scene" width="800" height="680" viewBox="0 0 800 680">
+  <defs>
+    <marker id="mT" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#d0342c"/></marker>
+    <marker id="mG" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#2e8b57"/></marker>
+    <marker id="mR" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#e58a2f"/></marker>
+  </defs>
+
+  <!-- 晾衣杆 + 挂钩夹子 -->
+  <line x1="205" y1="46" x2="575" y2="46" stroke="#222" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="390" cy="58" r="6" fill="none" stroke="#444" stroke-width="2.5"/>
+  <path d="M 381,65 L 399,65 L 394,86 L 386,86 Z" fill="#555"/>
+
+  <!-- 竖直参考虚线、θ 弧 -->
+  <line id="vDash" x1="390" y1="212" x2="390" y2="280" stroke="#999" stroke-width="1.3" stroke-dasharray="5 4"/>
+  <path id="arcTh" d="" fill="none" stroke="#c47f17" stroke-width="1.6"/>
+  <text id="arcThT" font-size="15" fill="#c47f17" font-weight="bold" font-style="italic">θ</text>
+
+  <!-- 主绳 ρ -->
+  <line id="ropeRho" x1="390" y1="86" x2="390" y2="206" stroke="#333" stroke-width="2.2"/>
+  <text id="rhoLbl" x="398" y="150" font-size="16" font-style="italic" font-weight="bold" fill="#333">ρ</text>
+
+  <!-- 篮子（圆柱侧面 + 椭圆口沿，口沿半径 r 不变） -->
+  <path id="wall" d="" fill="#e9e6dd" stroke="none"/>
+  <line id="wl" stroke="#222" stroke-width="2.5"/>
+  <line id="wr" stroke="#222" stroke-width="2.5"/>
+  <path id="wb" d="" fill="none" stroke="#222" stroke-width="2.5"/>
+  <ellipse id="rim" cx="390" cy="343" rx="110" ry="35.2" fill="#f7f2e4" stroke="#222" stroke-width="2.5"/>
+  <line id="rLine" stroke="#8a8a8a" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <text id="rLbl" font-size="13" fill="#777" font-style="italic">r</text>
+  <text id="rNote" font-size="12.5" fill="#888">半径 r 一定</text>
+
+  <!-- 四根绳 a b c d -->
+  <line id="ra" stroke="#444" stroke-width="2"/>
+  <line id="rb" stroke="#444" stroke-width="2"/>
+  <line id="rc" stroke="#444" stroke-width="2"/>
+  <line id="rd" stroke="#444" stroke-width="2"/>
+  <circle id="pa" r="3" fill="#222"/><circle id="pb" r="3" fill="#222"/>
+  <circle id="pc" r="3" fill="#222"/><circle id="pd" r="3" fill="#222"/>
+  <text id="la" font-size="15" font-weight="bold" font-style="italic" fill="#333">a</text>
+  <text id="lb" font-size="15" font-weight="bold" font-style="italic" fill="#333">b</text>
+  <text id="lc" font-size="15" font-weight="bold" font-style="italic" fill="#333">c</text>
+  <text id="ld" font-size="15" font-weight="bold" font-style="italic" fill="#333">d</text>
+
+  <!-- 结点 O -->
+  <circle id="dotO" cx="390" cy="206" r="4.5" fill="#222"/>
+  <text id="lblO" x="399" y="198" font-size="17" font-weight="bold" font-style="italic">O</text>
+
+  <!-- 受力箭头 -->
+  <g id="forces">
+    <line id="ta" stroke="#d0342c" stroke-width="2.4" marker-end="url(#mT)"/>
+    <line id="tb" stroke="#d0342c" stroke-width="2.4" marker-end="url(#mT)"/>
+    <line id="tc" stroke="#d0342c" stroke-width="2.4" marker-end="url(#mT)"/>
+    <line id="td" stroke="#d0342c" stroke-width="2.4" marker-end="url(#mT)"/>
+    <text id="tLbl" font-size="15" fill="#d0342c" font-weight="bold" font-style="italic">T</text>
+    <line id="fRho" stroke="#e58a2f" stroke-width="3" marker-end="url(#mR)"/>
+    <text id="frhoLbl" font-size="14" fill="#e58a2f" font-weight="bold">Fρ=G</text>
+    <line id="fGarr" stroke="#2e8b57" stroke-width="3" marker-end="url(#mG)"/>
+    <text id="gLbl" font-size="16" fill="#2e8b57" font-weight="bold" font-style="italic">G</text>
+  </g>
+
+  <!-- 右侧：力的大小比较 -->
+  <g id="inset">
+    <rect x="575" y="95" width="212" height="272" rx="8" fill="#fbfbf6" stroke="#bbb"/>
+    <text x="681" y="118" font-size="13.5" text-anchor="middle" fill="#555" font-weight="bold">竖直方向平衡（以 G 为单位）</text>
+    <text x="588" y="152" font-size="13" fill="#e58a2f" font-weight="bold">主绳 Fρ = 1.00G（不变）</text>
+    <rect x="588" y="160" width="110" height="16" fill="#e58a2f"/>
+    <text id="tName" x="588" y="205" font-size="13" fill="#d0342c" font-weight="bold">四绳拉力 T = 0.32G</text>
+    <rect id="barT" x="588" y="213" width="35" height="16" fill="#d0342c"/>
+    <line x1="698" y1="148" x2="698" y2="234" stroke="#666" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="703" y="248" font-size="12" fill="#666">1G</text>
+    <text x="588" y="280" font-size="14.5" fill="#333" font-weight="bold">4T·cosθ = G</text>
+    <text x="588" y="304" font-size="14.5" fill="#333" font-weight="bold">T = G / (4cosθ)</text>
+    <text id="cmp" x="588" y="332" font-size="14" font-weight="bold"></text>
+    <text x="588" y="356" font-size="12" fill="#888">θ &gt; 75.5° 时 T &gt; G</text>
+  </g>
+</svg>
+
+<div class="panel">
+  <label>绳长 L = <b id="lVal">1.60r</b></label>
+  <input type="range" id="lS" min="112" max="286" value="176" step="1">
+  <label>主绳 ρ 长 = <b id="rVal">120</b></label>
+  <input type="range" id="rS" min="70" max="200" value="120" step="1">
+  <label><input type="checkbox" id="showF" checked> 显示受力</label>
+  <button id="playL">▶ 绳 a、b、c、d 变短</button>
+  <button id="playR">▶ 主绳 ρ 变短</button>
+</div>
+
+<div id="info"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const CX=390, R=110, RY=35.2, D=24, DX=77.78, DY=24.89;
+let timer=null;
+
+function setL(id,x1,y1,x2,y2){const l=$(id);
+  l.setAttribute('x1',x1);l.setAttribute('y1',y1);
+  l.setAttribute('x2',x2);l.setAttribute('y2',y2);}
+function lbl(id,x,y,a){const t=$(id);
+  t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('text-anchor',a);}
+
+function update(rhoNote){
+  const L=+$('lS').value, Lr=+$('rS').value;
+  const th=Math.asin(R/L), h=Math.sqrt(L*L-R*R);
+  const Oy=86+Lr, by=Oy+h;
+  $('lVal').textContent=(L/R).toFixed(2)+'r';
+  $('rVal').textContent=Lr;
+
+  // 主绳、O、竖直虚线
+  $('ropeRho').setAttribute('y2',Oy);
+  $('rhoLbl').setAttribute('y',(86+Oy)/2+5);
+  $('vDash').setAttribute('y1',Oy+6);$('vDash').setAttribute('y2',Oy+74);
+  $('dotO').setAttribute('cy',Oy);$('lblO').setAttribute('y',Oy-8);
+
+  // θ 弧（竖直方向 → b 绳）
+  let ux=CX-DX-CX, uy=by+DY-Oy, ul=Math.hypot(ux,uy); ux/=ul; uy/=ul;
+  const R0=50;
+  $('arcTh').setAttribute('d',
+    `M ${CX} ${Oy+R0} A ${R0} ${R0} 0 0 1 ${(CX+ux*R0).toFixed(1)} ${(Oy+uy*R0).toFixed(1)}`);
+  let mx=ux,my=uy+1,ml=Math.hypot(mx,my);
+  $('arcThT').setAttribute('x',CX+70*mx/ml-5);
+  $('arcThT').setAttribute('y',Oy+70*my/ml+5);
+
+  // 篮子
+  $('rim').setAttribute('cy',by);
+  $('wall').setAttribute('d',
+    `M ${CX-R} ${by} A ${R} ${RY} 0 0 0 ${CX+R} ${by} L ${CX+R} ${by+D} A ${R} ${RY} 0 0 1 ${CX-R} ${by+D} Z`);
+  setL('wl',CX-R,by,CX-R,by+D); setL('wr',CX+R,by,CX+R,by+D);
+  $('wb').setAttribute('d',`M ${CX-R} ${by+D} A ${R} ${RY} 0 0 0 ${CX+R} ${by+D}`);
+  setL('rLine',CX,by,CX+R,by);
+  $('rLbl').setAttribute('x',CX+52);$('rLbl').setAttribute('y',by-6);
+  $('rNote').setAttribute('x',CX+R+12);$('rNote').setAttribute('y',by-4);
+
+  // 四根绳、连接点、标签
+  const P={a:[CX-DX,by-DY], b:[CX-DX,by+DY], c:[CX+DX,by+DY], d:[CX+DX,by-DY]};
+  for(const k of ['a','b','c','d']){
+    const [px,py]=P[k];
+    setL('r'+k,CX,Oy,px,py);
+    $('p'+k).setAttribute('cx',px);$('p'+k).setAttribute('cy',py);
+  }
+  lbl('la',(CX+P.a[0])/2-11,(Oy+P.a[1])/2-3,'end');
+  lbl('lb',(CX+P.b[0])/2-11,(Oy+P.b[1])/2+6,'end');
+  lbl('lc',(CX+P.c[0])/2+11,(Oy+P.c[1])/2+7,'start');
+  lbl('ld',(CX+P.d[0])/2+11,(Oy+P.d[1])/2-2,'start');
+
+  // 受力：每根绳拉力沿绳指向 O；主绳拉力沿绳向上；G 竖直向下
+  for(const k of ['a','b','c','d']){
+    const [px,py]=P[k];
+    let vx=CX-px, vy=Oy-py, vl=Math.hypot(vx,vy); vx/=vl; vy/=vl;
+    setL('t'+k, px+vx*8, py+vy*8, px+vx*46, py+vy*46);
+    if(k==='a'){
+      $('tLbl').setAttribute('x',px+vx*56-6);
+      $('tLbl').setAttribute('y',py+vy*56+4);
+    }
+  }
+  setL('fRho',CX,Oy-8,CX,Oy-64);
+  $('frhoLbl').setAttribute('x',CX+8);$('frhoLbl').setAttribute('y',Oy-34);
+  setL('fGarr',CX,by+D+6,CX,by+D+66);
+  $('gLbl').setAttribute('x',CX+9);$('gLbl').setAttribute('y',by+D+48);
+
+  // 柱状比较：T = G/(4cosθ)，Fρ = G
+  const T=1/(4*Math.cos(th)), cmp=$('cmp');
+  $('barT').setAttribute('width',Math.min(160,T*110));
+  $('tName').textContent=`四绳拉力 T = ${T.toFixed(2)}G`;
+  if(Math.abs(T-1)<0.02){cmp.textContent='T ≈ G（θ ≈ 75.5°）';cmp.setAttribute('fill','#333');}
+  else if(T<1){cmp.textContent='T < G（θ < 75.5°）';cmp.setAttribute('fill','#1e66d0');}
+  else{cmp.textContent='T > G（θ > 75.5°）';cmp.setAttribute('fill','#d0342c');}
+
+  $('info').innerHTML=
+    `每根绳与竖直方向夹角 θ = ${(th*180/Math.PI).toFixed(1)}°（sinθ = r/L），四绳水平分量由对称性抵消<br>`+
+    `竖直方向：4T·cosθ = G → 绳 a、b、c、d 拉力 <span class="t">T = G/(4cosθ) = ${T.toFixed(2)} G</span>　　`+
+    `主绳 <span class="fr">F<sub>ρ</sub> = G = 1.00 G</span>（整体法：恒等于总重，与 ρ 长度无关）<br>`+
+    `绳越短 → θ 越大 → cosθ 越小 → <b>T 越大（A 对，B 错）</b>；T 与 G 谁大取决于 θ，"一定"说法错（C、D 错）→ <b style="color:#c47f17">选 A</b>`+
+    (rhoNote?`<br><span style="color:#7a4fa0">主绳 ρ 变短：系统整体向上平移，θ、T、F<sub>ρ</sub> 均不变</span>`:'');
+}
+
+$('lS').addEventListener('input',()=>update());
+$('rS').addEventListener('input',()=>update());
+$('showF').addEventListener('change',e=>
+  $('forces').setAttribute('visibility',e.target.checked?'visible':'hidden'));
+
+function stopAnim(){if(timer){clearInterval(timer);timer=null;
+  $('playL').textContent='▶ 绳 a、b、c、d 变短';
+  $('playR').textContent='▶ 主绳 ρ 变短';}}
+
+$('playL').addEventListener('click',()=>{
+  if(timer){stopAnim();return;}
+  $('lS').value=286;update();
+  timer=setInterval(()=>{let v=+$('lS').value-2.2;
+    if(v<=112){v=112;stopAnim();}
+    $('lS').value=v;update();},30);
+});
+$('playR').addEventListener('click',()=>{
+  if(timer){stopAnim();return;}
+  $('rS').value=200;update();
+  timer=setInterval(()=>{let v=+$('rS').value-2;
+    if(v<=70){v=70;stopAnim();}
+    $('rS').value=v;update(true);},30);
+});
+
+update();
+</script>
+</body>
+</html>
