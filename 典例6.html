@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>【典例6】斜面匀速上滑 —— 方向可变的外力 F 的最小值（解析法 + 图象法）</title>
+<style>
+  body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:#f7f7f2;
+       display:flex;flex-direction:column;align-items:center;margin:0;padding:14px;}
+  h3{margin:6px 0 10px;}
+  svg{background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15);border-radius:8px;}
+  .panel{margin:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;
+         background:#fff;padding:10px 16px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);}
+  input[type=range]{width:250px;}
+  button{padding:6px 12px;cursor:pointer;border:1px solid #888;border-radius:5px;background:#eee;}
+  button:hover{background:#ddd;}
+  #info{background:#fff;padding:8px 20px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);
+        font-size:14.5px;line-height:1.8;text-align:center;max-width:1300px;}
+  #opts{width:1300px;background:#fff;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);
+        padding:10px 16px;margin-top:10px;font-size:14px;line-height:1.75;}
+  .opt{padding:5px 12px;margin:5px 0;border-left:4px solid #e0e0d6;background:#fafaf4;border-radius:0 6px 6px 0;}
+  .opt.active{background:#fff6df;border-left-color:#c47f17;}
+  .ans{padding:8px 12px;margin:8px 0 2px;border-left:4px solid #c47f17;background:#fff6df;
+       border-radius:0 6px 6px 0;font-size:15px;}
+</style>
+</head>
+<body>
+
+<h3>【典例6】粗糙斜面（37°，μ=0.5）上物块匀速上滑 —— 求方向可变的外力 F 的最小值</h3>
+
+<svg id="scene" width="1280" height="760" viewBox="0 0 1280 760">
+  <defs>
+    <marker id="arrG"  markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#2e8b57"/></marker>
+    <marker id="arrF"  markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#d0342c"/></marker>
+    <marker id="arrFg" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#999"/></marker>
+    <marker id="arrN"  markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#e58a2f"/></marker>
+    <marker id="arrFr" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#7a4fa0"/></marker>
+    <marker id="arrV"  markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#555"/></marker>
+    <marker id="arrVr" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#d0342c"/></marker>
+  </defs>
+
+  <line x1="660" y1="24" x2="660" y2="620" stroke="#e4e4da" stroke-width="1.5"/>
+  <text x="335" y="44" font-size="13.5" fill="#555" text-anchor="middle">装置：倾角 37° 粗糙斜面，物块 m = 2 kg 以 v = 2 m/s 匀速上滑，外力 F 方向可调</text>
+
+  <!-- ===== 左：斜面场景 ===== -->
+  <path d="M 90,610 L 590,235 L 590,610 Z" fill="#f7f4ec" stroke="#333" stroke-width="2.5"/>
+  <line x1="60" y1="610" x2="645" y2="610" stroke="#333" stroke-width="2.5"/>
+  <g id="hatch" stroke="#555" stroke-width="1.3"></g>
+  <text x="330" y="472" font-size="13" fill="#8a5a00">粗糙斜面 μ = 0.5</text>
+  <path d="M 136,610 A 46 46 0 0 0 126.8,582.4" fill="none" stroke="#c47f17" stroke-width="1.5"/>
+  <text x="148" y="596" font-size="13" fill="#c47f17" font-weight="bold">37°</text>
+
+  <!-- 重力分量（虚线） -->
+  <g id="comps">
+    <line id="compSin" stroke="#999" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <text id="compSinL" font-size="11" fill="#999">mgsin37°=12N</text>
+    <line id="compCos" stroke="#999" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <text id="compCosL" font-size="11" fill="#999">mgcos37°=16N</text>
+  </g>
+
+  <!-- 物块 -->
+  <g id="blockG">
+    <rect x="-23" y="-23" width="46" height="46" fill="#fdfaf2" stroke="#222" stroke-width="2.5"/>
+    <circle r="3" fill="#222"/>
+    <text x="0" y="7" font-size="15" font-style="italic" font-weight="bold" text-anchor="middle">m</text>
+  </g>
+  <text id="det" font-size="13.5" fill="#d0342c" font-weight="bold" text-anchor="middle"
+        visibility="hidden">✗ 已脱离斜面（F&#8345;&lt;0）</text>
+
+  <!-- 四个力 -->
+  <g id="forces">
+    <line id="cG"  stroke="#fff" stroke-width="6.5" opacity="0.9" stroke-linecap="round"/>
+    <line id="cF"  stroke="#fff" stroke-width="6.5" opacity="0.9" stroke-linecap="round"/>
+    <line id="cN"  stroke="#fff" stroke-width="6.5" opacity="0.9" stroke-linecap="round"/>
+    <line id="cfr" stroke="#fff" stroke-width="6.5" opacity="0.9" stroke-linecap="round"/>
+    <line id="fG"  stroke="#2e8b57" stroke-width="3"   marker-end="url(#arrG)"/>
+    <line id="fF"  stroke="#d0342c" stroke-width="3.2" marker-end="url(#arrF)"/>
+    <line id="fN"  stroke="#e58a2f" stroke-width="3"   marker-end="url(#arrN)"/>
+    <line id="ffr" stroke="#7a4fa0" stroke-width="3"   marker-end="url(#arrFr)"/>
+    <text id="mgL" font-size="13.5" fill="#2e8b57" font-weight="bold">mg=20N</text>
+    <text id="fL"  font-size="14"   fill="#d0342c" font-weight="bold">F</text>
+    <text id="nL"  font-size="13.5" fill="#e58a2f" font-weight="bold">F&#8345;</text>
+    <text id="frL" font-size="13.5" fill="#7a4fa0" font-weight="bold">f</text>
+  </g>
+
+  <!-- 速度箭头 -->
+  <g id="vgrp">
+    <line id="cv" stroke="#fff" stroke-width="6" opacity="0.9" stroke-linecap="round"/>
+    <line id="fv" stroke="#555" stroke-width="2.4" marker-end="url(#arrV)"/>
+    <text id="vL" font-size="12.5" fill="#555" font-weight="bold">v=2m/s</text>
+  </g>
+
+  <path id="thArc" fill="none" stroke="#d0342c" stroke-width="1.6"/>
+  <text id="thL" font-size="13.5" fill="#d0342c" font-weight="bold" text-anchor="middle">θ</text>
+  <text id="warn" x="355" y="150" font-size="14" fill="#d0342c" font-weight="bold"
+        text-anchor="middle" visibility="hidden">θ &gt; 53.1°：F&#8345; &lt; 0，物块脱离斜面，此方向无解！</text>
+
+  <text x="90" y="648" font-size="12.5" fill="#666">● 匀速上滑 ⇒ 合力为零：沿斜面 F cosθ = mg sin37° + μF&#8345;，垂直斜面 F&#8345; = mg cos37° − F sinθ</text>
+  <text x="90" y="672" font-size="12.5" fill="#666">● θ &gt; 53.1° 时 F&#8345; &lt; 0 ⇒ 物体离开斜面，"沿斜面匀速上滑"前提被破坏，该方向无解（动画中物块自动脱离并停止滑动）</text>
+
+  <!-- ===== 右：F(θ) 图象 ===== -->
+  <text x="935" y="40" font-size="15" font-weight="bold" fill="#333" text-anchor="middle">图象法：F = 20/(cosθ + 0.5sinθ)</text>
+  <text x="935" y="62" font-size="11.5" fill="#777" text-anchor="middle">最低点：θ* = arctan μ ≈ 26.6°，F&#8342;&#8345;&#8346; = 8√5 ≈ 17.9 N；θ &gt; 53.1° 区域 F&#8345; &lt; 0 无解</text>
+
+  <g id="plot"></g>
+  <circle id="curveDot" r="5" fill="#1e66d0" stroke="#fff" stroke-width="1.6"/>
+  <line id="dotGuide" stroke="#1e66d0" stroke-width="1" stroke-dasharray="3 3" opacity="0.6"/>
+
+  <text id="fx1" x="680" y="372" font-size="13"   fill="#1e66d0" font-weight="bold"></text>
+  <text id="fx2" x="680" y="396" font-size="13"   fill="#7a4fa0" font-weight="bold"></text>
+  <text id="fx3" x="680" y="420" font-size="13"   fill="#333" font-weight="bold"></text>
+  <text id="fx4" x="680" y="444" font-size="13"   fill="#333" font-weight="bold"></text>
+  <text id="fx5" x="680" y="472" font-size="14"   fill="#c47f17" font-weight="bold"></text>
+  <text id="fx6" x="680" y="500" font-size="13.5" fill="#555" font-weight="bold"></text>
+
+  <text x="680" y="548" font-size="12" fill="#888">● 最优条件 tanθ* = μ（摩擦角），与 m、v 无关；θ 增大时分母先增后减，26.6° 时最大</text>
+  <text x="680" y="572" font-size="12" fill="#888">● 定义域：F&#8345; = 16 − F sinθ ≥ 0 ⇒ tanθ ≤ 4/3 ⇒ θ ≤ 53.1°；红色区域内公式值无物理意义（无解）</text>
+</svg>
+
+<div class="panel">
+  <label>θ（F 与斜面夹角）= <b id="thVal">0.0°</b></label>
+  <input type="range" id="slider" min="0" max="90" value="0" step="0.5">
+  <label><input type="checkbox" id="chkF" checked> 显示受力</label>
+  <button type="button" id="b0">θ=0°</button>
+  <button type="button" id="bOpt">θ=26.6° ★最优</button>
+  <button type="button" id="b37">θ=37°（F水平）</button>
+  <button type="button" id="bCrit">θ=53.1°（N=0）</button>
+  <button type="button" id="b90">θ=90°（脱离·无解）</button>
+  <button type="button" id="play">▶ 播放 θ：0°→90°</button>
+</div>
+
+<div id="info"></div>
+
+<div id="opts">
+  <div class="opt" id="optA"><b>A.（✗ 错误）4√5 N ≈ 8.94 N</b>　比最小值还小：由 F = 20/(cosθ+0.5sinθ) ≥ 20/(√5/2) = 8√5 N，无论 F 什么方向都不可能。</div>
+  <div class="opt" id="optB"><b>B.（✓ 正确）8√5 N ≈ 17.9 N</b>　当 θ = arctan μ = arctan 0.5 ≈ 26.6°（此时 F&#8345; = 8 N、f = 4 N）时分母最大，F 最小。</div>
+  <div class="opt" id="optC"><b>C.（✗ 错误）12 N</b>　12 N 只是重力沿斜面分量 mg sin37°；还需克服摩擦，且 12 N &lt; F&#8342;&#8345;&#8346; = 8√5 N，不可能。</div>
+  <div class="opt" id="optD"><b>D.（✗ 错误）16 N</b>　16 N = mg cos37°，仍小于 F&#8342;&#8345;&#8346; = 8√5 ≈ 17.9 N，不可能。</div>
+  <div class="ans">答案：<b>B</b>　　F&#8342;&#8345;&#8346; = mg(sin37° + μcos37°)/√(1+μ²) = 20 ÷ (√5/2) = <b>8√5 N ≈ 17.9 N</b>（方向与斜面成 arctan 0.5 ≈ 26.6°）
+　<span style="color:#d0342c">注意：θ &gt; 53.1° 时 F&#8345; &lt; 0，物块脱离斜面，"匀速上滑"不成立，该区间无解。</span></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const NS='http://www.w3.org/2000/svg';
+
+/* ---- 物理常数 ---- */
+const SIN=.6, COS=.8, MU=.5, MG=20, S=5;
+const C=MG*(SIN+MU*COS);
+const Fneed=t=>C/(Math.cos(t)+MU*Math.sin(t));
+const thOpt=Math.atan(MU)*180/Math.PI;      // 26.565°
+const Fmin=C/Math.sqrt(1+MU*MU);            // 17.888 N
+const thMax=Math.atan(4/3)*180/Math.PI;     // 53.130°
+
+const EXACTS=[
+ {t:0,     tol:.06, F:'20 N',                    N:'16 N',            f:'8 N',        note:'（θ=0：F 沿斜面向上）'},
+ {t:26.565,tol:.15, F:'8√5 N ≈ 17.89 N（最小！）', N:'8 N',             f:'4 N',        note:'（θ=arctan μ，最优方向）'},
+ {t:37,    tol:.06, F:'200/11 N ≈ 18.18 N',      N:'56/11 ≈ 5.1 N',   f:'28/11 ≈ 2.5N',note:'（F 恰好水平）'},
+ {t:53.13, tol:.15, F:'20 N',                    N:'0',               f:'0',          note:'（临界：恰好不压斜面）'},
+ {t:90,    tol:.06, F:'40 N（代数值，已失效）',    N:'−24 N < 0',       f:'—',          note:'（脱离斜面：无解）'}
+];
+const getExact=d=>{for(const e of EXACTS){if(Math.abs(d-e.t)<e.tol)return e;}return null;};
+
+/* ---- 场景锚点 ---- */
+const AXs=90, AYs=610, UX=.8, UY=-.6, NX=-.6, NY=-.8;
+const BS0=70, BS1=430; let blockS=BS0;
+
+/* ---- 图象映射（加宽）：θ 0~90 → x 690~1180；F 8~40N → y 320~130 ---- */
+const xOf=t=>690+t/90*490;
+const yOf=F=>320-(F-8)*190/32;
+
+function mk(tag,attrs,parent){const e=document.createElementNS(NS,tag);
+  for(const k in attrs)e.setAttribute(k,attrs[k]);parent.appendChild(e);return e;}
+
+(()=>{const g=$('hatch');for(let x=66;x<=640;x+=17)
+  mk('line',{x1:x,y1:610,x2:x-11,y2:622},g);})();
+
+/* ---- 静态：图象 ---- */
+(()=>{const P=$('plot');
+  mk('rect',{x:xOf(thMax),y:120,width:1180-xOf(thMax),height:210,fill:'#fdf1ef'},P);
+  mk('text',{x:(xOf(thMax)+1180)/2,y:142,'font-size':12,fill:'#d0342c','text-anchor':'middle','font-weight':'bold'},P)
+    .textContent='θ>53.1°：F\u2099<0';
+  mk('text',{x:(xOf(thMax)+1180)/2,y:158,'font-size':11,fill:'#d0342c','text-anchor':'middle'},P)
+    .textContent='物块脱离斜面，无解';
+  for(let F=8;F<=40;F+=4){const y=yOf(F);
+    mk('line',{x1:680,y1:y,x2:1180,y2:y,stroke:'#f0ede2','stroke-width':1},P);
+    mk('line',{x1:676,y1:y,x2:684,y2:y,stroke:'#555','stroke-width':1.2},P);
+    mk('text',{x:672,y:y+4,'font-size':11,fill:'#555','text-anchor':'end'},P).textContent=F;}
+  for(let t=0;t<=90;t+=15){const x=xOf(t);
+    mk('line',{x1:x,y1:120,x2:x,y2:330,stroke:'#f2efe6','stroke-width':1},P);
+    mk('line',{x1:x,y1:330,x2:x,y2:334,stroke:'#555','stroke-width':1.2},P);
+    mk('text',{x:x,y:348,'font-size':11,fill:'#555','text-anchor':'middle'},P).textContent=t+'°';}
+  [[thOpt,'#c47f17','26.6°'],[thMax,'#d0342c','53.1°']].forEach(([t,c,s])=>{
+    mk('line',{x1:xOf(t),y1:330,x2:xOf(t),y2:336,stroke:c,'stroke-width':2},P);
+    mk('text',{x:xOf(t),y:362,'font-size':11,fill:c,'text-anchor':'middle','font-weight':'bold'},P).textContent=s;});
+  mk('line',{x1:680,y1:120,x2:680,y2:330,stroke:'#555','stroke-width':1.6},P);
+  mk('line',{x1:680,y1:330,x2:1190,y2:330,stroke:'#555','stroke-width':1.6},P);
+  mk('text',{x:680,y:110,'font-size':12.5,fill:'#555','text-anchor':'middle','font-weight':'bold','font-style':'italic'},P).textContent='F/N';
+  mk('text',{x:1194,y:334,'font-size':12.5,fill:'#555','font-weight':'bold','font-style':'italic'},P).textContent='θ';
+  let p1='',p2='';
+  for(let t=0;t<=thMax;t+=.4)  p1+=xOf(t).toFixed(1)+','+yOf(Fneed(t*Math.PI/180)).toFixed(1)+' ';
+  for(let t=thMax;t<=90;t+=.8) p2+=xOf(t).toFixed(1)+','+yOf(Fneed(t*Math.PI/180)).toFixed(1)+' ';
+  mk('polyline',{points:p1,fill:'none',stroke:'#1e66d0','stroke-width':2.6},P);
+  mk('polyline',{points:p2,fill:'none',stroke:'#c9c9c9','stroke-width':1.6,'stroke-dasharray':'5 4'},P);
+  [[8.944,'A: 4√5≈8.9N'],[12,'C: 12N'],[16,'D: 16N']].forEach(([v,l])=>{const y=yOf(v);
+    mk('line',{x1:680,y1:y,x2:1180,y2:y,stroke:'#bbb','stroke-width':1.1,'stroke-dasharray':'5 4'},P);
+    mk('text',{x:1180,y:y-4,'font-size':11,fill:'#999','text-anchor':'end'},P).textContent=l;});
+  const ym=yOf(Fmin), xm=xOf(thOpt);
+  mk('line',{x1:680,y1:ym,x2:1180,y2:ym,stroke:'#c47f17','stroke-width':1.3,'stroke-dasharray':'6 4'},P);
+  mk('line',{x1:xm,y1:ym,x2:xm,y2:330,stroke:'#c47f17','stroke-width':1.1,'stroke-dasharray':'4 3'},P);
+  mk('line',{x1:680,y1:ym,x2:xm,y2:ym,stroke:'#c47f17','stroke-width':1.1,'stroke-dasharray':'4 3'},P);
+  mk('text',{x:xm,y:ym+8,'font-size':16,fill:'#c47f17','text-anchor':'middle'},P).textContent='★';
+  mk('text',{x:xm+8,y:ym-8,'font-size':12,fill:'#c47f17','font-weight':'bold'},P).textContent='B：F\u2092\u1D62\u2099=8√5≈17.9N';
+  mk('text',{x:xm+6,y:346,'font-size':11,fill:'#c47f17','font-weight':'bold'},P).textContent='θ*=arctan μ';
+})();
+
+function setP(id,x1,y1,x2,y2){const e=$(id);
+  e.setAttribute('x1',x1);e.setAttribute('y1',y1);
+  e.setAttribute('x2',x2);e.setAttribute('y2',y2);}
+function setT(id,x,y,a){const e=$(id);e.setAttribute('x',x);e.setAttribute('y',y);
+  if(a)e.setAttribute('text-anchor',a);}
+
+let okNow=true;   // 当前 θ 是否物理成立（供主循环判断是否继续滑动）
+
+function update(){
+  const deg=parseFloat($('slider').value), th=deg*Math.PI/180;
+  const F=Fneed(th), sv=Math.sin(th), cv=Math.cos(th);
+  const N=MG*COS-F*sv, fr=MU*N, ok=N>=-1e-9;
+  okNow=ok;
+  $('thVal').textContent=deg.toFixed(1)+'°';
+  const ex=getExact(deg);
+
+  /* ---- 物块位置：有效时沿斜面滑动；脱离时沿法向抬离（缝隙随 |N| 增大）并冻结 ---- */
+  const gap=ok?0:Math.min(50,8+(-N)*1.6);
+  const sx=AXs+blockS*UX, sy=AYs+blockS*UY;
+  const cx=sx+NX*(23+gap), cy=sy+NY*(23+gap);
+  $('blockG').setAttribute('transform',`translate(${cx},${cy}) rotate(-37)`);
+  $('det').setAttribute('visibility',ok?'hidden':'visible');
+  setT('det',cx,cy-46);
+
+  /* ---- mg 与分量 ---- */
+  setP('cG',cx,cy,cx,cy+MG*S); setP('fG',cx,cy,cx,cy+MG*S);
+  setT('mgL',cx+9,cy+MG*S-4);
+  setP('compSin',cx,cy,cx-UX*60,cy-UY*60);
+  setT('compSinL',cx-UX*66+8,cy-UY*66+12);
+  setP('compCos',cx,cy,cx-NX*80,cy-NY*80);
+  setT('compCosL',cx-NX*92+4,cy-NY*92+4);
+
+  /* ---- F：有效=红色实线；失效=灰色虚线"失效值" ---- */
+  const dx=cv*UX+sv*NX, dy=cv*UY+sv*NY;
+  const fx=cx+dx*F*S, fy=cy+dy*F*S;
+  setP('cF',cx,cy,fx,fy); setP('fF',cx,cy,fx,fy);
+  $('fF').setAttribute('stroke',ok?'#d0342c':'#999');
+  $('fF').setAttribute('stroke-dasharray',ok?'none':'6 4');
+  $('fF').setAttribute('marker-end',ok?'url(#arrF)':'url(#arrFg)');
+  const fL=$('fL');
+  setT('fL',fx+dx*16,fy+dy*16+4,dx>=0?'start':'end');
+  fL.setAttribute('fill',ok?'#d0342c':'#999');
+  fL.textContent=ok?'F':'F(失效)';
+
+  /* ---- Fₙ 与 f（脱离时彻底消失） ---- */
+  const Nv=Math.max(N,0), fv=Math.max(fr,0);
+  const nx=cx+NX*Nv*S, ny=cy+NY*Nv*S;
+  setP('cN',cx,cy,nx,ny); setP('fN',cx,cy,nx,ny);
+  setT('nL',nx+NX*15,ny+NY*15+4,'end');
+  const rx=cx-UX*fv*S, ry=cy-UY*fv*S;
+  setP('cfr',cx,cy,rx,ry); setP('ffr',cx,cy,rx,ry);
+  setT('frL',rx-UX*14,ry-UY*14+4,'end');
+  ['cN','fN','nL'].forEach(i=>$(i).setAttribute('visibility',Nv>0.4?'visible':'hidden'));
+  ['cfr','ffr','frL'].forEach(i=>$(i).setAttribute('visibility',fv>0.2?'visible':'hidden'));
+
+  /* ---- v 箭头：有效=灰"v=2m/s"；脱离=红"✗ 无法匀速上滑" ---- */
+  setP('cv',cx+UX*55,cy+UY*55,cx+UX*118,cy+UY*118);
+  setP('fv',cx+UX*55,cy+UY*55,cx+UX*118,cy+UY*118);
+  $('fv').setAttribute('stroke',ok?'#555':'#d0342c');
+  $('fv').setAttribute('marker-end',ok?'url(#arrV)':'url(#arrVr)');
+  setT('vL',cx+UX*124,cy+UY*124+2);
+  const vL=$('vL');
+  vL.setAttribute('fill',ok?'#555':'#d0342c');
+  vL.textContent=ok?'v=2m/s':'✗ 无法匀速上滑';
+
+  /* ---- θ 角弧 ---- */
+  if(deg>=2){
+    $('thArc').setAttribute('visibility','visible');$('thL').setAttribute('visibility','visible');
+    $('thArc').setAttribute('d',
+      `M ${cx+UX*46} ${cy+UY*46} A 46 46 0 0 0 ${cx+dx*46} ${cy+dy*46}`);
+    let bx=UX+dx, by=UY+dy; const bl=Math.hypot(bx,by);
+    setT('thL',cx+bx/bl*64,cy+by/bl*64+4);
+  }else{$('thArc').setAttribute('visibility','hidden');$('thL').setAttribute('visibility','hidden');}
+  $('warn').setAttribute('visibility',ok?'hidden':'visible');
+
+  /* ---- 图象动点 ---- */
+  const px=xOf(deg), py=yOf(Math.min(Math.max(F,8),40));
+  $('curveDot').setAttribute('cx',px);$('curveDot').setAttribute('cy',py);
+  $('curveDot').setAttribute('fill',ok?'#1e66d0':'#bbb');
+  setP('dotGuide',px,py,px,330);
+  $('dotGuide').setAttribute('stroke',ok?'#1e66d0':'#ccc');
+
+  /* ---- 公式实时代入 ---- */
+  const Fs=ex?ex.F:F.toFixed(2)+' N';
+  const Ns=ex?ex.N:N.toFixed(1)+' N';
+  const fs=ex?ex.f:fr.toFixed(1)+' N';
+  if(ok){
+    $('fx1').textContent=`垂直斜面：F\u2099 = mg cos37° − F sinθ = 16 − ${(F*sv).toFixed(1)} = ${Ns}`;
+    $('fx2').textContent=`沿斜面：F cosθ = mg sin37° + μF\u2099 = 12 + ${fr.toFixed(1)} = ${(12+fr).toFixed(1)} N；实际 F cosθ = ${(F*cv).toFixed(1)} N ✓`;
+  }else{
+    $('fx1').textContent=`垂直斜面：F\u2099 = 16 − ${(F*sv).toFixed(1)} = ${Ns} < 0 ⇒ 斜面给不出支持力（更无摩擦）`;
+    $('fx2').textContent=`沿斜面方程已失效：物块离开斜面，"匀速上滑"前提不成立 ⇒ 此 θ 方向无解`;
+  }
+  $('fx3').textContent=`整理：F·(cosθ + μsinθ) = mg(sin37° + μcos37°) = 12 + 8 = 20 N（恒量）`;
+  $('fx4').textContent=`⇒ F = 20/(cosθ+0.5sinθ)；而 cosθ+0.5sinθ = (√5/2)·cos(θ−26.6°) ≤ √5/2 ≈ 1.118`;
+  $('fx5').textContent=`θ = arctan μ ≈ 26.6° 时 F 最小 = 20 ÷ (√5/2) = 8√5 ≈ 17.9 N → 选 B`;
+  if(ok){
+    $('fx6').setAttribute('fill','#555');
+    $('fx6').textContent=`当前 θ=${deg.toFixed(1)}°：F = ${Fs}　F\u2099 = ${Ns}　f = ${fs}　${ex?ex.note:''}`;
+  }else{
+    $('fx6').setAttribute('fill','#d0342c');
+    $('fx6').textContent=`当前 θ=${deg.toFixed(1)}°：F\u2099 = ${Ns} —— 物体已脱离斜面，任何 F 都无法实现题设运动（无解）`;
+  }
+
+  $('info').innerHTML=
+    `θ = ${deg.toFixed(1)}°　<span style="color:#d0342c;font-weight:bold">F = ${Fs}</span>　　`+
+    `<span style="color:#e58a2f;font-weight:bold">F\u2099 = ${Ns}</span>　　`+
+    (ok?`<span style="color:#7a4fa0;font-weight:bold">f = μF\u2099 = ${fs}</span><br>`+
+    `核心方程：F(cosθ+μsinθ) = 20 N（恒量）⇒ 分母 cosθ+0.5sinθ 最大时 F 最小　→ 最优角 θ* = arctan μ ≈ 26.6°，<b>F\u2092\u1D62\u2099 = 8√5 ≈ 17.9 N，选 B</b>`
+       :`<br><span style="color:#d0342c;font-weight:bold">F\u2099 &lt; 0 ⇒ 物块脱离斜面：既无支持力也无摩擦力，"以 2 m/s 沿斜面匀速上滑"根本无法发生 —— 此方向无解（灰色虚线段的代数值没有物理意义）</span>`);
+  $('optB').classList.toggle('active',Math.abs(deg-thOpt)<1.8);
+}
+
+/* ---- 交互 ---- */
+$('slider').addEventListener('input',()=>{stopPlay();update();});
+$('chkF').addEventListener('change',e=>{
+  const v=e.target.checked?'visible':'hidden';
+  ['forces','comps','vgrp','thArc','thL'].forEach(i=>$(i).setAttribute('visibility',v));});
+
+const playBtn=$('play'), BASE='▶ 播放 θ：0°→90°', RPLAY='▶ 再演示一次';
+let playing=false, thetaVal=0;
+function stopPlay(){playing=false;playBtn.textContent=BASE;}
+playBtn.addEventListener('click',()=>{
+  if(playing){stopPlay();return;}
+  const cur=parseFloat($('slider').value);
+  thetaVal=(cur>=89.9)?0:cur;
+  playing=true;playBtn.textContent='⏸ 暂停';
+  $('slider').value=thetaVal;update();
+});
+const jump=v=>{stopPlay();$('slider').value=v;update();};
+$('b0').onclick =()=>jump(0);
+$('bOpt').onclick=()=>jump(26.5);
+$('b37').onclick =()=>jump(37);
+$('bCrit').onclick=()=>jump(53);
+$('b90').onclick =()=>jump(90);
+
+/* 主循环：仅在物理有效（θ≤53.1°）时物块才沿斜面滑动 */
+setInterval(()=>{
+  if(okNow){blockS+=0.75; if(blockS>BS1)blockS=BS0;}
+  if(playing){
+    thetaVal+=0.35;
+    if(thetaVal>=90){thetaVal=90;playing=false;playBtn.textContent=RPLAY;}
+    $('slider').value=thetaVal;
+  }
+  update();
+},30);
+
+window.addEventListener('error',e=>{
+  const box=$('info');
+  if(box)box.insertAdjacentHTML('beforeend',
+    `<div style="color:#d0342c">⚠ 脚本异常：${e.message}</div>`);
+});
+
+update();
+</script>
+</body>
+</html>
