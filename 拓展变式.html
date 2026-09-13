@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>【拓展变式】缓拉半圆柱 A 直至 C 恰好落地 —— 求最小动摩擦因数（根号精确值）</title>
+<style>
+  body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:#f7f7f2;
+       display:flex;flex-direction:column;align-items:center;margin:0;padding:14px;}
+  h3{margin:6px 0 10px;}
+  svg{background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15);border-radius:8px;}
+  .panel{margin:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;
+         background:#fff;padding:10px 16px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);}
+  input[type=range]{width:240px;}
+  button{padding:6px 13px;cursor:pointer;border:1px solid #888;border-radius:5px;background:#eee;}
+  button:hover{background:#ddd;}
+  #info{background:#fff;padding:8px 20px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);
+        font-size:14.5px;line-height:1.8;text-align:center;max-width:1080px;}
+  #opts{width:1080px;background:#fff;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);
+        padding:10px 16px;margin-top:10px;font-size:14px;line-height:1.75;}
+  .opt{padding:5px 12px;margin:5px 0;border-left:4px solid #e0e0d6;background:#fafaf4;border-radius:0 6px 6px 0;}
+  .ans{padding:8px 12px;margin:8px 0 2px;border-left:4px solid #c47f17;background:#fff6df;
+       border-radius:0 6px 6px 0;font-size:15px;}
+  table.et{border-collapse:collapse;margin:6px auto;font-size:13.5px;}
+  table.et td,table.et th{border:1px solid #ccc;padding:4px 14px;text-align:center;}
+  table.et th{background:#f4f0e2;}
+  .rd{color:#8a5a00;font-weight:bold;}
+</style>
+</head>
+<body>
+
+<h3>【拓展变式】水平缓拉半圆柱 A 直至 C 恰好落地 —— 求地面动摩擦因数最小值 μ<sub>min</sub>（B 全程静止）</h3>
+
+<svg id="scene" width="1080" height="720" viewBox="0 0 1080 720">
+  <defs>
+    <marker id="arrG" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#2e8b57"/></marker>
+    <marker id="arrF" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#1e66d0"/></marker>
+    <marker id="arrN" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#d0342c"/></marker>
+    <marker id="arrNB" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#e58a2f"/></marker>
+    <marker id="arrR" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#7a4fa0"/></marker>
+  </defs>
+
+  <line x1="700" y1="24" x2="700" y2="596" stroke="#e4e4da" stroke-width="1.5"/>
+
+  <!-- ===== 左：装置场景 ===== -->
+  <line x1="170" y1="560" x2="710" y2="560" stroke="#333" stroke-width="2.5"/>
+  <g id="hatch" stroke="#555" stroke-width="1.4"></g>
+
+  <path d="M 215,560 A 85 85 0 0 1 385,560" fill="#fdfaf2" stroke="#333" stroke-width="2.5"/>
+  <circle cx="300" cy="560" r="3.5" fill="#222"/>
+  <text x="287" y="550" font-size="16" font-weight="bold" text-anchor="end">B</text>
+
+  <path id="domeA" d="" fill="#fdfaf2" stroke="#333" stroke-width="2.5"/>
+  <circle id="dotA" r="3.5" fill="#222"/>
+  <text id="lblA" font-size="16" font-weight="bold" text-anchor="end">A</text>
+
+  <circle id="circC" r="85" fill="#eef4fb" stroke="#222" stroke-width="2.5"/>
+  <line id="lBC" stroke="#999" stroke-width="1.3" stroke-dasharray="5 4"/>
+  <line id="lAC" stroke="#999" stroke-width="1.3" stroke-dasharray="5 4"/>
+  <circle id="dotC" r="3.5" fill="#222"/>
+  <text id="lblC" font-size="16" font-weight="bold" text-anchor="end">C</text>
+  <text id="rL1" font-size="12.5" fill="#777" font-style="italic">R</text>
+  <text id="rL2" font-size="12.5" fill="#777" font-style="italic">R</text>
+  <line x1="300" y1="560" x2="300" y2="486" stroke="#999" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <path id="arcTh" fill="none" stroke="#c47f17" stroke-width="1.6"/>
+  <text id="thTxt" font-size="13" fill="#c47f17" font-weight="bold" text-anchor="middle"></text>
+  <text id="landTxt" font-size="14" fill="#e58a2f" font-weight="bold" text-anchor="middle" visibility="hidden">★ C 恰好落地！</text>
+  <text id="gapTxt" font-size="12" fill="#888"></text>
+
+  <!-- C 受力 -->
+  <g id="forcesC">
+    <line id="uc1" stroke="#fff" stroke-width="6.5" opacity="0.9" stroke-linecap="round"/>
+    <line id="uc2" stroke="#fff" stroke-width="6.5" opacity="0.9" stroke-linecap="round"/>
+    <line id="ug"  stroke="#fff" stroke-width="6.5" opacity="0.9" stroke-linecap="round"/>
+    <line id="pA" stroke="#7a4fa0" stroke-width="1.3" stroke-dasharray="5 4" opacity="0.8"/>
+    <line id="pB" stroke="#7a4fa0" stroke-width="1.3" stroke-dasharray="5 4" opacity="0.8"/>
+    <line id="fC1" stroke="#1e66d0" stroke-width="3" marker-end="url(#arrF)"/>
+    <line id="fC2" stroke="#1e66d0" stroke-width="3" marker-end="url(#arrF)"/>
+    <line id="fg"  stroke="#2e8b57" stroke-width="3" marker-end="url(#arrG)"/>
+    <line id="tre" stroke="#7a4fa0" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#arrR)"/>
+    <text id="lF1" font-size="14" fill="#1e66d0" font-weight="bold">F</text>
+    <text id="lF2" font-size="14" fill="#1e66d0" font-weight="bold" text-anchor="end">F</text>
+    <text id="lmg" font-size="14" fill="#2e8b57" font-weight="bold">mg</text>
+    <text id="ltr" font-size="12.5" fill="#7a4fa0" font-weight="bold">2Fcosθ=mg</text>
+  </g>
+
+  <!-- 反作用力 F′ -->
+  <g id="react">
+    <line id="urB" stroke="#fff" stroke-width="6" opacity="0.9" stroke-linecap="round"/>
+    <line id="urA" stroke="#fff" stroke-width="6" opacity="0.9" stroke-linecap="round"/>
+    <line id="rB" stroke="#1e66d0" stroke-width="2.4" marker-end="url(#arrF)"/>
+    <line id="rA" stroke="#1e66d0" stroke-width="2.4" marker-end="url(#arrF)"/>
+    <text id="lRB" font-size="13" fill="#1e66d0" font-weight="bold" text-anchor="end">F′</text>
+    <text id="lRA" font-size="13" fill="#1e66d0" font-weight="bold">F′</text>
+  </g>
+
+  <text x="180" y="622" font-size="12.5" fill="#666">● A、B、C 半径均为 R，圆心距 O&#8342;O&#8346; = O&#8342;O&#8345; = 2R（外切）；O&#8346; 离地高度 = 2R·cosθ</text>
+  <text x="180" y="642" font-size="12.5" fill="#666">● 初始 A、B 相靠 ⇒ θ=30°；C 恰落地 ⇔ 2R·cosθ = R ⇒ θ = 60°（A 右移 2√3−2 ≈ 1.46R）</text>
+  <text x="180" y="662" font-size="12.5" fill="#666">● 蓝 F：C 受 A、B 弹力（沿圆心连线）；F′ 为反作用力（压 B、A 向外）</text>
+
+  <!-- ===== 右：B 的受力分析 ===== -->
+  <text x="880" y="42" font-size="15.5" font-weight="bold" fill="#333" text-anchor="middle">缓拉 A 直至 C 落地 —— 对 B 的受力分析</text>
+  <text x="880" y="64" font-size="12" fill="#777" text-anchor="middle">关键：F&#8345; = mg 恒定；f = (mg/2)·tanθ 随 θ 增大（特殊角显示精确根号值）</text>
+  <line x1="712" y1="76" x2="1060" y2="76" stroke="#ddd" stroke-width="1"/>
+
+  <text x="880" y="132" font-size="13.5" font-weight="bold" fill="#555" text-anchor="middle">B 的受力图（各力按同一比例）</text>
+  <line x1="880" y1="148" x2="880" y2="308" stroke="#999" stroke-width="1.1" stroke-dasharray="4 3"/>
+  <line x1="798" y1="232" x2="990" y2="232" stroke="#999" stroke-width="1.1" stroke-dasharray="4 3"/>
+  <circle cx="880" cy="232" r="3" fill="#222"/>
+  <text x="866" y="240" font-size="14" font-weight="bold" text-anchor="end">B</text>
+
+  <line id="ufW"  stroke="#fff" stroke-width="6" opacity="0.9" stroke-linecap="round"/>
+  <line id="ufbf" stroke="#fff" stroke-width="6" opacity="0.9" stroke-linecap="round"/>
+  <line id="fbN"  stroke="#e58a2f" stroke-width="3" marker-end="url(#arrNB)"/>
+  <line id="fbW"  stroke="#2e8b57" stroke-width="3" marker-end="url(#arrG)"/>
+  <line id="fbf"  stroke="#d0342c" stroke-width="3" marker-end="url(#arrN)"/>
+  <line id="fbF"  stroke="#1e66d0" stroke-width="3" marker-end="url(#arrF)"/>
+  <text x="887" y="168" font-size="13.5" fill="#e58a2f" font-weight="bold">F&#8345;</text>
+  <text x="887" y="278" font-size="13.5" fill="#2e8b57" font-weight="bold">mg/2</text>
+  <text id="lfbf" font-size="13.5" fill="#d0342c" font-weight="bold">f</text>
+  <text id="lfbF" font-size="14" fill="#1e66d0" font-weight="bold" text-anchor="end">F</text>
+  <path id="fbArc" fill="none" stroke="#c47f17" stroke-width="1.5"/>
+  <text id="fbTh" font-size="12.5" fill="#c47f17" font-weight="bold" text-anchor="middle"></text>
+
+  <text id="fx1" x="712" y="340" font-size="13.5" fill="#1e66d0" font-weight="bold"></text>
+  <text id="fx2" x="712" y="364" font-size="13.5" fill="#d0342c" font-weight="bold"></text>
+  <text id="fx3" x="712" y="388" font-size="13.5" fill="#e58a2f" font-weight="bold"></text>
+  <text id="fx4" x="712" y="412" font-size="13.5" fill="#333" font-weight="bold"></text>
+  <text x="712" y="440" font-size="13.5" fill="#8a5a00" font-weight="bold">θ=60°（C 恰落地）时 tanθ/2 最大 ⇒ μ<tspan baseline-shift="sub" font-size="10">min</tspan> = √3/2 ≈ 0.866</text>
+
+  <!-- μ(θ) 曲线 -->
+  <text x="887" y="468" font-size="13" font-weight="bold" fill="#555" text-anchor="middle">B 不滑动所需摩擦因数 μ(θ) = tanθ/2（单调增）</text>
+  <line x1="740" y1="560" x2="1035" y2="560" stroke="#555" stroke-width="1.6"/>
+  <line x1="740" y1="560" x2="740" y2="458" stroke="#555" stroke-width="1.6"/>
+  <line x1="887.5" y1="560" x2="887.5" y2="565" stroke="#555" stroke-width="1.4"/>
+  <line x1="1035"  y1="560" x2="1035"  y2="565" stroke="#555" stroke-width="1.4"/>
+  <text x="740" y="578" font-size="11.5" fill="#555" text-anchor="middle">30°</text>
+  <text x="887.5" y="578" font-size="11.5" fill="#555" text-anchor="middle">45°</text>
+  <text x="1035" y="578" font-size="11.5" fill="#555" text-anchor="middle">60°</text>
+  <text x="1046" y="564" font-size="12.5" fill="#555" font-weight="bold" font-style="italic">θ</text>
+  <text x="732" y="564" font-size="11" fill="#555" text-anchor="end">0</text>
+  <text x="732" y="511" font-size="11" fill="#555" text-anchor="end">1/2</text>
+  <text x="732" y="473" font-size="11" fill="#d0342c" text-anchor="end">√3/2</text>
+  <polyline id="muCurve" fill="none" stroke="#1e66d0" stroke-width="2.4"/>
+  <line x1="740" y1="469" x2="1035" y2="469" stroke="#d0342c" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="1033" y="461" font-size="12" fill="#d0342c" font-weight="bold" text-anchor="end">μ<tspan baseline-shift="sub" font-size="9">min</tspan>=√3/2≈0.866</text>
+  <text x="905" y="538" font-size="11.5" fill="#777" font-style="italic">μ(θ)=tanθ/2</text>
+  <circle id="muDot" r="4.5" fill="#c47f17" stroke="#fff" stroke-width="1.5"/>
+  <text id="muTxt" font-size="12" fill="#c47f17" font-weight="bold"></text>
+</svg>
+
+<div class="panel">
+  <label>θ（O&#8342;O&#8346; 与竖直夹角）= <b id="thVal">30.0°</b></label>
+  <input type="range" id="slider" min="30" max="60" value="30" step="0.5">
+  <label><input type="checkbox" id="chkF" checked> 显示受力</label>
+  <button type="button" id="btn30">θ=30°（初始）</button>
+  <button type="button" id="btn45">θ=45°（μ≥1/2）</button>
+  <button type="button" id="btn60">θ=60°（C 恰落地）</button>
+  <button type="button" id="play">▶ 缓拉 A 直至 C 落地</button>
+</div>
+
+<div id="info"></div>
+
+<div id="opts">
+  <div class="opt"><b>第 1 步 · 几何关系</b>　三圆柱半径均为 R，彼此外切 ⇒ 圆心距 O&#8342;O&#8346; = 2R。设 O&#8342;O&#8346; 与竖直方向夹角 θ，则 O&#8346; 离地高度 = 2R·cosθ。
+    初始 A、B 相靠（O&#8342;O&#8345; = 2R）⇒ θ&#8320; = 30°；<b>C 恰好落地 ⇔ 2R·cosθ = R ⇒ θ = 60°</b>。整个过程中 θ 由 30° 增大到 60°。</div>
+  <div class="opt"><b>第 2 步 · 对 C 平衡（缓慢移动）</b>　两段弹力 F 对称、沿圆心连线，竖直方向：<b>2F·cosθ = mg ⇒ F = mg/(2cosθ)</b>。
+    θ 增大 ⇒ cosθ 减小 ⇒ F 增大（√3mg/3 ≈ 0.577mg → mg）；<b>C 恰落地时 B 受 C 压力的水平分力最大，此时 θ = 60°</b>。</div>
+  <div class="opt"><b>第 3 步 · 对 B（始终静止）</b>　每个半圆柱重 mg/2。水平：f = F·sinθ = (mg/2)·tanθ（随 θ 增大）；
+    竖直：F&#8345; = mg/2 + F·cosθ = mg/2 + mg/2 = <b>mg（与 θ 无关，恒定！——因为 F·cosθ = mg/2 始终成立）</b>。</div>
+  <div class="opt"><b>第 4 步 · 不滑动条件</b>　最大静摩擦 ≈ 滑动摩擦：f ≤ μF&#8345; ⇒ <b>μ ≥ f/F&#8345; = tanθ/2</b>。
+    θ = 60° 时要求最大 ⇒ <b>μ<sub>min</sub> = tan60°/2 = √3/2</b>。</div>
+  <div class="opt" style="border-left-color:#c47f17;background:#fffdf4">
+    <b>特殊角精确值对照（拖到对应角度即可看到）：</b>
+    <table class="et">
+      <tr><th>θ</th><th>cosθ</th><th>tanθ</th><th>F = mg/(2cosθ)</th><th>f = (mg/2)·tanθ</th><th>需 μ ≥ tanθ/2</th></tr>
+      <tr><td>30°</td><td>√3/2</td><td>√3/3</td><td class="rd">√3mg/3 ≈ 0.577mg</td><td class="rd">√3mg/6 ≈ 0.289mg</td><td class="rd">√3/6 ≈ 0.289</td></tr>
+      <tr><td>45°</td><td>√2/2</td><td>1</td><td class="rd">√2mg/2 ≈ 0.707mg</td><td class="rd">mg/2</td><td class="rd">1/2</td></tr>
+      <tr><td>60°</td><td>1/2</td><td>√3</td><td class="rd">mg</td><td class="rd">√3mg/2 ≈ 0.866mg</td><td class="rd">√3/2 ≈ 0.866</td></tr>
+    </table>
+  </div>
+  <div class="ans">答案：<b>μ<sub>min</sub> = √3/2</b>　（B 全程静止的最小动摩擦因数；危险状态在 C 恰好落地瞬间）</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const R=85, GY=560, BX=300, S=72;
+const D2R=Math.PI/180;
+
+/* 特殊角精确值 */
+const EXACTS={
+ 30:{F:['√3mg/3',1], f:['√3mg/6',1], mu:['√3/6',1], h:['√3R',1],
+     d:['0',0], gap:['(√3−1)R',1]},
+ 45:{F:['√2mg/2',1], f:['mg/2',0],   mu:['1/2',0],  h:['√2R',1],
+     d:['(2√2−2)R',1], gap:['(√2−1)R',1]},
+ 60:{F:['mg',0],     f:['√3mg/2',1], mu:['√3/2',1], h:['R',0],
+     d:['(2√3−2)R',1], gap:['0',0]}
+};
+function getExact(deg){
+  for(const k in EXACTS){if(Math.abs(deg-k)<0.06)return EXACTS[k];}
+  return null;
+}
+const sh=(pair,dec)=>pair[1]?pair[0]+' ≈ '+dec:pair[0];
+
+/* 地面阴影 */
+(()=>{const g=$('hatch');for(let x=182;x<=704;x+=17){
+  const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('x1',x);l.setAttribute('y1',560);
+  l.setAttribute('x2',x-11);l.setAttribute('y2',572);g.appendChild(l);}})();
+
+/* μ(θ) 曲线 */
+(()=>{let pts=[];
+  for(let d=30;d<=60;d+=1){const t=d*D2R;
+    pts.push((740+(d-30)/30*295).toFixed(1)+','+(560-105*Math.tan(t)/2).toFixed(1));}
+  $('muCurve').setAttribute('points',pts.join(' '));})();
+
+function setP(id,x1,y1,x2,y2){const e=$(id);
+  e.setAttribute('x1',x1);e.setAttribute('y1',y1);
+  e.setAttribute('x2',x2);e.setAttribute('y2',y2);}
+function setT(id,x,y,a){const e=$(id);e.setAttribute('x',x);e.setAttribute('y',y);
+  if(a)e.setAttribute('text-anchor',a);}
+
+function update(){
+  const deg=parseFloat($('slider').value);
+  const th=deg*D2R, s=Math.sin(th), c=Math.cos(th);
+  const ex=getExact(deg);
+  $('thVal').textContent=deg.toFixed(1)+'°';
+
+  const Fv=1/(2*c), fvs=0.5*Math.tan(th), gap=2*c-1, disp=4*s-2, hgt=2*c;
+  const Fshow =ex?sh(ex.F ,Fv.toFixed(3)+'mg')  :Fv.toFixed(3)+'mg';
+  const fshow =ex?sh(ex.f ,fvs.toFixed(3)+'mg') :fvs.toFixed(3)+'mg';
+  const mushow=ex?sh(ex.mu,fvs.toFixed(3))      :fvs.toFixed(3);
+  const hshow =ex?sh(ex.h ,hgt.toFixed(3)+'R')  :hgt.toFixed(3)+'R';
+  const dshow =ex?sh(ex.d ,disp.toFixed(3)+'R') :disp.toFixed(3)+'R';
+  const gapshow=ex?sh(ex.gap,gap.toFixed(2)+'R'):gap.toFixed(2)+'R';
+
+  /* 几何位置 */
+  const OCx=BX+2*R*s, OCy=GY-2*R*c, AX=BX+4*R*s;
+  $('domeA').setAttribute('d',`M ${AX-R},${GY} A ${R} ${R} 0 0 1 ${AX+R},${GY}`);
+  $('circC').setAttribute('cx',OCx);$('circC').setAttribute('cy',OCy);
+  $('dotA').setAttribute('cx',AX);$('dotA').setAttribute('cy',GY);
+  $('dotC').setAttribute('cx',OCx);$('dotC').setAttribute('cy',OCy);
+  setT('lblA',AX-14,549);setT('lblC',OCx-15,OCy-10);
+  setP('lBC',BX,GY,OCx,OCy);setP('lAC',AX,GY,OCx,OCy);
+  const off=12;
+  setT('rL1',BX+0.5*R*s+c*off,GY-0.5*R*c+s*off);
+  setT('rL2',BX+1.5*R*s+c*off,GY-1.5*R*c+s*off);
+  $('arcTh').setAttribute('d',`M ${BX} ${GY-40} A 40 40 0 0 1 ${BX+40*s} ${GY-40*c}`);
+  const am=-90*D2R+th/2;
+  setT('thTxt',BX+56*Math.cos(am),GY+56*Math.sin(am)+4);
+  $('thTxt').textContent='θ='+deg.toFixed(0)+'°';
+  if(deg>59.7){
+    $('landTxt').setAttribute('visibility','visible');
+    setT('landTxt',OCx,OCy-R-12);
+    setT('gapTxt',OCx+R+12,OCy+R-6);$('gapTxt').textContent='C 底部刚接触地面！';
+  }else{
+    $('landTxt').setAttribute('visibility','hidden');
+    setT('gapTxt',OCx+R+12,OCy+R-6);
+    $('gapTxt').textContent='C 底部离地 '+gapshow;
+  }
+
+  /* C 受力 */
+  const FL=Fv*S;
+  const t1x=OCx+s*FL, t1y=OCy-c*FL, t2x=OCx-s*FL, t2y=OCy-c*FL;
+  setP('uc1',OCx,OCy,t1x,t1y);setP('fC1',OCx,OCy,t1x,t1y);
+  setP('uc2',OCx,OCy,t2x,t2y);setP('fC2',OCx,OCy,t2x,t2y);
+  setP('ug',OCx,OCy,OCx,OCy+S);setP('fg',OCx,OCy,OCx,OCy+S);
+  setP('pA',t1x,t1y,OCx,OCy-S);setP('pB',t2x,t2y,OCx,OCy-S);
+  setP('tre',OCx,OCy,OCx,OCy-S);
+  setT('lF1',t1x+(s*16+2),t1y-c*16+4,'start');
+  setT('lF2',t2x+(-s*16-2),t2y-c*16+4,'end');
+  setT('lmg',OCx+9,OCy+S-6);setT('ltr',OCx+9,OCy-40);
+
+  /* 反作用力 F′ */
+  const cBx=BX+R*s, cBy=GY-R*c, cAx=AX-R*s;
+  setP('urB',cBx-6*s,cBy+6*c,cBx-s*FL,cBy+c*FL);
+  setP('rB',cBx-6*s,cBy+6*c,cBx-s*FL,cBy+c*FL);
+  setP('urA',cAx+6*s,cBy+6*c,cAx+s*FL,cBy+c*FL);
+  setP('rA',cAx+6*s,cBy+6*c,cAx+s*FL,cBy+c*FL);
+  setT('lRB',cBx-s*FL-6,cBy+c*FL-4);setT('lRA',cAx+s*FL+6,cBy+c*FL-4);
+
+  /* 右：B 受力图 */
+  setP('fbN',880,232,880,160);
+  setP('ufW',880,232,880,232+S/2);setP('fbW',880,232,880,232+S/2);
+  setP('ufbf',880,232,880+S/2*s/c,232);setP('fbf',880,232,880+S/2*s/c,232);
+  setP('fbF',880,232,880-s*FL,232+c*FL);
+  setT('lfbf',880+S/2*s/c+9,236,'start');
+  setT('lfbF',880-s*(FL+14)-4,232+c*(FL+14)+4,'end');
+  $('fbArc').setAttribute('d',`M 880 262 A 30 30 0 0 1 ${880-30*s} ${232+30*c}`);
+  setT('fbTh',880-46*Math.sin(th/2),232+46*Math.cos(th/2)+4);
+  $('fbTh').textContent='θ='+deg.toFixed(0)+'°';
+
+  /* 公式实时代入 */
+  $('fx1').textContent=`对 C：2F·cosθ = mg ⇒ F = mg/(2cosθ) = ${Fshow}`;
+  $('fx2').textContent=`对 B：f = F·sinθ = (mg/2)·tanθ = ${fshow}（随θ增大）`;
+  $('fx3').textContent=`F\u2099 = mg/2 + F·cosθ = 1.00mg（恒定，与θ无关！）`;
+  $('fx4').textContent=`B 不滑动 ⇔ μ ≥ f/F\u2099 = tanθ/2 = ${mushow}`;
+
+  /* 曲线动点 */
+  const dx=740+(deg-30)/30*295, dy=560-105*fvs;
+  $('muDot').setAttribute('cx',dx);$('muDot').setAttribute('cy',dy);
+  if(deg>52)setT('muTxt',dx-9,dy-8,'end');else setT('muTxt',dx+9,dy-8,'start');
+  $('muTxt').textContent=`需 μ≥${ex?ex.mu[0]:fvs.toFixed(2)}`;
+
+  $('info').innerHTML=
+    `θ = ${deg.toFixed(1)}°　A 右移 d = ${dshow}　O&#8346; 离地高度 = ${hshow}（= 2R·cosθ）<br>`+
+    `对 C：<span style="color:#1e66d0;font-weight:bold">F = mg/(2cosθ) = ${Fshow}</span>（增大）　　`+
+    `对 B：<span style="color:#d0342c;font-weight:bold">f = F·sinθ = ${fshow}</span>（增大）　　`+
+    `<span style="color:#e58a2f;font-weight:bold">F&#8345; = mg/2 + F·cosθ = mg（恒定）</span><br>`+
+    `B 不滑动 ⇔ μ ≥ f/F&#8345; = tanθ/2 = <b>${mushow}</b>`+
+    (deg>59.7?`　<span style="color:#e58a2f;font-weight:bold">★ C 恰好落地：θ=60°，f 最大 = √3mg/2 ⇒ μ<sub>min</sub> = tan60°/2 = √3/2</span>`
+             :`　→ θ 越大越危险，θ=60° 时 μ<sub>min</sub> = √3/2`);
+}
+
+/* ========= 播放控制器（核心修复） =========
+   旧版每帧从滑杆读回数值再累加；滑杆 step=0.5 时，
+   部分浏览器会把 30.2、30.4… 按步长取整回 30，画面永远不动。
+   新版改用内部变量 animVal 驱动，不再读回滑杆。 */
+const playBtn=$('play');
+let timer=null, animVal=30;
+const BASE='▶ 缓拉 A 直至 C 落地';
+function stopAnim(){
+  if(timer){clearInterval(timer);timer=null;}
+  playBtn.textContent=BASE;
+}
+playBtn.addEventListener('click',()=>{
+  if(timer){stopAnim();return;}                       // 播放中 → 暂停
+  animVal=parseFloat($('slider').value)||30;          // 从当前滑杆位置开始
+  if(animVal>=59.9)animVal=30;                        // 已到终点 → 从头演示
+  playBtn.textContent='⏸ 暂停';
+  $('slider').value=animVal;update();
+  timer=setInterval(()=>{
+    animVal+=0.25;
+    if(animVal>=60){animVal=60;stopAnim();playBtn.textContent='▶ 再演示一次';}
+    $('slider').value=animVal;update();
+  },30);
+});
+
+$('slider').addEventListener('input',()=>{stopAnim();update();}); // 手动拖动即暂停
+$('chkF').addEventListener('change',e=>{
+  const v=e.target.checked?'visible':'hidden';
+  $('forcesC').setAttribute('visibility',v);
+  $('react').setAttribute('visibility',v);});
+const jump=v=>{stopAnim();$('slider').value=v;update();};
+$('btn30').onclick=()=>jump(30);
+$('btn45').onclick=()=>jump(45);
+$('btn60').onclick=()=>jump(60);
+
+/* 调试保险：若仍有脚本异常，直接在信息栏显示原因，不再无声失灵 */
+window.addEventListener('error',e=>{
+  const box=$('info');
+  if(box)box.insertAdjacentHTML('beforeend',
+    `<div style="color:#d0342c">⚠ 脚本异常：${e.message}</div>`);
+});
+
+update();
+</script>
+</body>
+</html>

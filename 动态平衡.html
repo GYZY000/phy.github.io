@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>动态平衡 · 五大方法原理动画</title>
+<style>
+  body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:#f4f4ee;
+       display:flex;flex-direction:column;align-items:center;margin:0;padding:12px;}
+  h2{margin:6px 0 8px;}
+  nav{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;justify-content:center;}
+  nav button{padding:8px 16px;border:1px solid #998;border-radius:6px;background:#fff;
+             cursor:pointer;font-size:14.5px;}
+  nav button.on{background:#2f5f8f;color:#fff;border-color:#2f5f8f;}
+  .wrap{display:flex;gap:12px;align-items:stretch;flex-wrap:wrap;justify-content:center;}
+  svg{background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15);border-radius:8px;}
+  #side{width:330px;background:#fff;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.12);
+        padding:12px 15px;font-size:13.8px;line-height:1.75;}
+  #side h3{margin:2px 0 8px;color:#2f5f8f;}
+  #side b.t{color:#8a5a00;}
+  #ctrls{margin:10px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:center;
+         background:#fff;padding:9px 18px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);}
+  #ctrls input[type=range]{width:170px;}
+  #ctrls button{padding:6px 14px;cursor:pointer;border:1px solid #888;border-radius:5px;background:#eee;}
+  #ctrls button:hover{background:#ddd;}
+  #info{background:#fff;padding:8px 22px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);
+        font-size:14.5px;line-height:1.85;text-align:center;max-width:980px;}
+</style>
+</head>
+<body>
+
+<h2>动态平衡问题 · 五大方法原理动画</h2>
+<nav id="tabs"></nav>
+
+<div class="wrap">
+  <svg id="stage" width="665" height="560" viewBox="0 0 665 560"></svg>
+  <aside id="side"></aside>
+</div>
+
+<div id="ctrls"></div>
+<div id="info"></div>
+
+<script>
+/* ================= 通用工具 ================= */
+const NS='http://www.w3.org/2000/svg';
+const stage=document.getElementById('stage');
+const $=id=>document.getElementById(id);
+const CLR={G:'#2e8b57',A:'#1e66d0',B:'#d0342c',N:'#e58a2f',P:'#7a4fa0',T:'#c47f17'};
+
+function el(tag,attrs,parent){
+  const e=document.createElementNS(NS,tag);
+  for(const k in attrs)e.setAttribute(k,attrs[k]);
+  (parent||stage).appendChild(e);return e;
+}
+function markerDef(color){
+  const id='m'+color.slice(1);
+  if(!stage.querySelector('#'+id)){
+    const d=el('defs',{});
+    const m=el('marker',{id,markerWidth:12,markerHeight:12,refX:9,refY:4,
+      orient:'auto',markerUnits:'userSpaceOnUse'},d);
+    el('path',{d:'M0,0 L10,4 L0,8 Z',fill:color},m);
+  }
+  return 'url(#'+id+')';
+}
+function seg(p,x1,y1,x2,y2,color,w,dash,arrow){
+  const a={x1,y1,x2,y2,stroke:color,'stroke-width':w||2,'stroke-linecap':'round'};
+  if(dash)a['stroke-dasharray']=dash;
+  if(arrow)a['marker-end']=markerDef(color);
+  return el('line',a,p);
+}
+function txt(p,x,y,str,size,fill,anchor,bold,italic){
+  const t=el('text',{x,y,'font-size':size,fill:fill||'#333','text-anchor':anchor||'start'});
+  if(bold)t.setAttribute('font-weight','bold');
+  if(italic)t.setAttribute('font-style','italic');
+  t.textContent=str;return t;
+}
+function arc2(p,O,r,uA,uB,color,label){
+  const a1=Math.atan2(uA[1],uA[0]),a2=Math.atan2(uB[1],uB[0]);
+  let d=(a2-a1)*180/Math.PI;while(d<=-180)d+=360;while(d>180)d-=360;
+  el('path',{d:`M ${O[0]+r*uA[0]} ${O[1]+r*uA[1]} A ${r} ${r} 0 ${Math.abs(d)>180?1:0} ${d>0?1:0} ${O[0]+r*uB[0]} ${O[1]+r*uB[1]}`,
+    fill:'none',stroke:color,'stroke-width':1.8},p);
+  if(label){
+    const am=a1+d/2;
+    txt(p,O[0]+(r+14)*Math.cos(am)-5,O[1]+(r+14)*Math.sin(am)+5,label,13.5,color,'middle',1);
+  }
+}
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1]], mul=(a,k)=>[a[0]*k,a[1]*k],
+      sub=(a,b)=>[a[0]-b[0],a[1]-b[1]],
+      norm=a=>{const l=Math.hypot(a[0],a[1]);return[a[0]/l,a[1]/l];};
+let timer=null;
+function stopTimer(){if(timer){clearInterval(timer);timer=null;
+  document.querySelectorAll('#ctrls button[data-play]').forEach(b=>b.dataset.play==='1'&&playBtnReset(b));}}
+function playBtnReset(b){b.textContent=b.dataset.label;}
+
+/* ================= 五个方法 ================= */
+const METHODS={};
+
+/* ---------- 1 解析法：横梁悬绳 + A点施力（对应教材图3.5-7） ---------- */
+METHODS.m1={name:'① 解析法',
+  theory:{principle:'以共点力作用点（结点 A）为对象，把各力沿坐标轴正交分解，列 ΣFx=0、ΣFy=0，解出待求力随变量（偏角 θ）变化的函数，再讨论增减与极限。注意：轻绳只能沿绳方向产生拉力。',
+    steps:'选结点 A → 画三力（T₁ 沿 AO、T₂=G 沿 AC 竖直向下、F 水平）→ 正交分解列方程 → 解出 T₁、F → 讨论 θ 变化与极限。',
+    apply:'受力明确、角度关系清楚、能写出函数式的动态平衡问题；需要定量结果或讨论极限（如“绳能否拉成水平”）时首选。',
+    formula:'ΣFy=0：T₁·cosθ = G；ΣFx=0：T₁·sinθ = F ⇒ T₁ = G/cosθ，F = G·tanθ。极限：θ→90° 时 T₁→∞（绳拉不成水平）。'},
+  build(){
+    const g=el('g',{});
+    g._th=0;
+    const O=[290,86], L1=150, L2=108, S=66;
+    /* 横梁 */
+    seg(g,120,80,470,80,'#333',6);
+    for(let x=130;x<=460;x+=15)seg(g,x,80,x-8,71,'#777',1.1);
+    txt(g,478,76,'横梁',12.5,'#555','start',1);
+    /* 初始状态（θ=0）虚线幽灵：对应图中虚线画法 */
+    seg(g,O[0],O[1],O[0],O[1]+L1,'#aaa',1.6,'6 4');
+    seg(g,O[0],O[1]+L1,O[0],O[1]+L1+L2,'#aaa',1.6,'6 4');
+    el('rect',{x:O[0]-16,y:O[1]+L1+L2+2,width:32,height:32,fill:'none',
+       stroke:'#aaa','stroke-width':1.5,'stroke-dasharray':'6 4'},g);
+    txt(g,O[0]-26,O[1]+L1+L2+22,'初始位置',12,'#aaa','end',1);
+    /* 动态元素（只创建一次） */
+    const rope1=seg(g,O[0],O[1],O[0],O[1]+L1,'#444',2);
+    const rope2=seg(g,0,0,0,0,'#444',2);
+    const block=el('rect',{width:32,height:32,fill:'#e8d9b8',stroke:'#222','stroke-width':2.2},g);
+    const dO=el('circle',{r:4,fill:'#222'},g);
+    const dA=el('circle',{r:4,fill:'#222'},g);
+    const dC=el('circle',{r:3,fill:'#222'},g);
+    const lO=txt(g,O[0]-10,O[1]-8,'O',15,'#333','end',1,1);
+    const lA=txt(g,0,0,'A',15,'#333','start',1,1);
+    const lC=txt(g,0,0,'C',15,'#333','end',1,1);
+    const lB=txt(g,0,0,'B',14,'#888','start',1,1);
+    const arc=el('path',{fill:'none',stroke:CLR.T,'stroke-width':1.6},g);
+    const arcT=txt(g,0,0,'θ',14,CLR.T,'middle',1,1);
+    const bDash=seg(g,0,0,0,0,'#999',1.2,'4 3');
+    const bDot=el('circle',{r:3,fill:'#888'},g);
+    const fT=seg(g,0,0,0,0,CLR.A,2.8,null,1);
+    const fF=seg(g,0,0,0,0,CLR.B,2.8,null,1);
+    const fG=seg(g,0,0,0,0,CLR.G,2.8,null,1);
+    const fGa=seg(g,0,0,0,0,CLR.G,2.8,null,1);
+    const lT=txt(g,0,0,'T\u2081',14,CLR.A,'end',1,1);
+    const lF=txt(g,0,0,'F',14,CLR.B,'start',1,1);
+    const lG=txt(g,0,0,'T\u2082=G',12.5,CLR.G,'start',1);
+    const lG2=txt(g,0,0,'G',14,CLR.G,'start',1,1);
+    /* 右区：解析过程 */
+    txt(g,552,128,'结点 A 共点力平衡（解析法）',14,'#555','middle',1);
+    const eq1=txt(g,455,160,'① 竖直方向 ΣFy = 0：',13.5,'#555','start',1);
+    const eq2=txt(g,467,184,'',14,CLR.A,'start',1);
+    const eq3=txt(g,455,214,'② 水平方向 ΣFx = 0：',13.5,'#555','start',1);
+    const eq4=txt(g,467,238,'',14,CLR.B,'start',1);
+    const eq5=txt(g,455,272,'',14.5,'#333','start',1);
+    const eq6=txt(g,455,300,'',14.5,'#333','start',1);
+    const warn=txt(g,455,336,'',13,'#d0342c','start',1);
+    txt(g,455,376,'为什么下段绳 AC 始终竖直？',13,'#8a5a00','start',1);
+    txt(g,455,398,'重物只受重力 G 与绳张力 T₂，',12.5,'#555','start',1);
+    txt(g,455,417,'二力平衡 ⇒ T₂ 与 G 等大反向、',12.5,'#555','start',1);
+    txt(g,455,436,'沿竖直方向，故 AC 段保持竖直。',12.5,'#555','start',1);
+    function update(){
+      const th=g._th*Math.PI/180, s=Math.sin(th), c=Math.cos(th);
+      const Ax=O[0]+L1*s, Ay=O[1]+L1*c, Cx=Ax, Cy=Ay+L2;
+      rope1.setAttribute('x2',Ax);rope1.setAttribute('y2',Ay);
+      rope2.setAttribute('x1',Ax);rope2.setAttribute('y1',Ay);
+      rope2.setAttribute('x2',Cx);rope2.setAttribute('y2',Cy);
+      block.setAttribute('x',Cx-16);block.setAttribute('y',Cy+2);
+      dO.setAttribute('cx',O[0]);dO.setAttribute('cy',O[1]);
+      dA.setAttribute('cx',Ax);dA.setAttribute('cy',Ay);
+      dC.setAttribute('cx',Cx);dC.setAttribute('cy',Cy);
+      lA.setAttribute('x',Ax+8);lA.setAttribute('y',Ay+18);
+      lC.setAttribute('x',Cx-10);lC.setAttribute('y',Cy+6);
+      const showArc=g._th>1.5;
+      arc.setAttribute('visibility',showArc?'visible':'hidden');
+      arcT.setAttribute('visibility',showArc?'visible':'hidden');
+      arc.setAttribute('d',`M ${O[0]} ${O[1]+42} A 42 42 0 0 1 ${O[0]+42*s} ${O[1]+42*c}`);
+      arcT.setAttribute('x',O[0]+58*s+10);arcT.setAttribute('y',O[1]+58*c+4);
+      const T1=1/Math.max(c,1e-3), F=Math.tan(th);
+      const LT=Math.min(S/c,140), LF=Math.min(S*s/c,120);
+      fT.setAttribute('x1',Ax);fT.setAttribute('y1',Ay);
+      fT.setAttribute('x2',Ax-LT*s);fT.setAttribute('y2',Ay-LT*c);
+      lT.setAttribute('x',Ax-LT*s-14);lT.setAttribute('y',Ay-LT*c+16);
+      fF.setAttribute('x1',Ax);fF.setAttribute('y1',Ay);
+      fF.setAttribute('x2',Ax+LF);fF.setAttribute('y2',Ay);
+      lF.setAttribute('x',Ax+LF+6);lF.setAttribute('y',Ay-6);
+      const showF=LF>2;
+      fF.setAttribute('visibility',showF?'visible':'hidden');
+      lF.setAttribute('visibility',showF?'visible':'hidden');
+      bDash.setAttribute('visibility',showF?'visible':'hidden');
+      bDash.setAttribute('x1',Ax+LF);bDash.setAttribute('y1',Ay);
+      bDash.setAttribute('x2',Ax+134);bDash.setAttribute('y2',Ay);
+      bDot.setAttribute('cx',Ax+140);bDot.setAttribute('cy',Ay);
+      lB.setAttribute('x',Ax+146);lB.setAttribute('y',Ay+5);
+      fG.setAttribute('x1',Ax);fG.setAttribute('y1',Ay+4);
+      fG.setAttribute('x2',Ax);fG.setAttribute('y2',Ay+4+S);
+      lG.setAttribute('x',Ax+8);lG.setAttribute('y',Ay+4+S-4);
+      fGa.setAttribute('x1',Cx);fGa.setAttribute('y1',Cy+38);
+      fGa.setAttribute('x2',Cx);fGa.setAttribute('y2',Cy+80);
+      lG2.setAttribute('x',Cx+8);lG2.setAttribute('y',Cy+72);
+      eq2.textContent=`T\u2081·cosθ = T\u2082 = G`;
+      eq4.textContent=`T\u2081·sinθ = F`;
+      eq5.textContent=`⇒ T\u2081 = G/cosθ = ${T1.toFixed(2)}G`;
+      eq6.textContent=`⇒ F = G·tanθ = ${F.toFixed(2)}G`;
+      warn.textContent=g._th>=78?'θ→90° 时 cosθ→0，T\u2081→∞：绳不可能拉平！':'';
+      $('info').innerHTML=`θ = ${g._th.toFixed(1)}°（绳 OA 段与竖直方向夹角，对应图3.5-7）　`+
+        `<span style="color:${CLR.A}">T\u2081 = ${T1.toFixed(2)}G</span>　`+
+        `<span style="color:${CLR.G}">T\u2082 = G（不变）</span>　`+
+        `<span style="color:${CLR.B}">F = ${F.toFixed(2)}G</span><br>`+
+        `θ 越大绳越紧；θ→90° 时 T\u2081→∞ —— <b>挂着重物的轻绳不可能被拉成水平（不能平衡）</b>，`+
+        `只有初始竖直状态（θ=0，F=0）才是平衡态`;
+    }
+    return{update,
+      controls:[
+        {type:'range',label:'θ（偏角）',min:0,max:85,step:0.5,get:()=>g._th,set:v=>{g._th=v;update();}},
+        {type:'play',label:'▶ 逐渐把绳拉向水平',run:()=>{g._th=0;
+          return()=>{g._th+=0.6;if(g._th>=85){g._th=85;return false;}return true;};}}
+      ]};
+  }};
+
+/* ---------- 2 图解法：双绳吊物，Tₑ 从水平转向竖直 ---------- */
+METHODS.m2={name:'② 图解法',
+  theory:{principle:'三力平衡时三力首尾相接构成封闭矢量三角形。若一个力恒定（G）、一个力方向不变（Tₐ）、第三个力方向变化（Tₑ），则矢量三角形顶点沿 Tₐ 的固定作用线移动，直接比较各边长短即知力的变化。',
+    steps:'先画恒力 G → 再画方向不变的力所在固定射线 → 转动的力首尾相接，交点移动 → 观察边长变化；变力方向与定向力垂直时该力取极值。',
+    apply:'三力平衡 + “一恒力、一定向力、一转动力”的经典动态平衡模型，直观、定性判断快。',
+    formula:'Tₐ = G·sinβ/sin(α+β)，Tₑ = G·sinα/sin(α+β)（α：定向力与竖直夹角；β：转动力与竖直夹角）。特例：Tₑ⊥Tₐ 时 Tₑ最小 = G·sinα。'},
+  build(){
+    const g=el('g',{});
+    g._beta=90;const al=30, a=al*Math.PI/180;
+    const O=[235,220], L=130;
+    seg(g,60,90,430,90,'#333',5);
+    for(let x=70;x<=420;x+=15)seg(g,x,90,x-8,99,'#777',1.1);
+    const A=[O[0]-L*Math.sin(a),O[1]-L*Math.cos(a)];
+    seg(g,O[0],O[1],A[0],A[1],'#444',2);
+    seg(g,A[0],A[1],A[0],90,'#333',2);
+    txt(g,A[0]-14,104,'A',15,'#333','middle',1,1);
+    el('path',{d:`M ${O[0]+L} ${O[1]} A ${L} ${L} 0 0 0 ${O[0]} ${O[1]-L}`,
+      fill:'none',stroke:'#bbb','stroke-width':1.3,'stroke-dasharray':'4 3'},g);
+    const ropeB=seg(g,O[0],O[1],0,0,'#444',2);
+    const dotB=el('circle',{r:4.5,fill:'#fff',stroke:'#222','stroke-width':2.2},g);
+    el('circle',{cx:O[0],cy:O[1],r:4.5,fill:'#222'},g);
+    txt(g,O[0]+8,O[1]+4,'O',15,'#333','start',1,1);
+    seg(g,O[0],O[1],O[0],O[1]+62,'#444',2);
+    el('rect',{x:O[0]-14,y:O[1]+62,width:28,height:28,fill:'#fff',stroke:'#222','stroke-width':2.3},g);
+    const fG=seg(g,0,0,0,0,CLR.G,2.6,null,1);
+    txt(g,O[0]+10,O[1]+108,'G',15,CLR.G,'start',1,1);
+    const fA=seg(g,O[0],O[1],0,0,CLR.A,2.6,null,1), fB=seg(g,O[0],O[1],0,0,CLR.B,2.6,null,1);
+    const ltA=txt(g,0,0,'T\u2090',15,CLR.A,'middle',1,1);
+    const ltB=txt(g,0,0,'T\u2091',15,CLR.B,'middle',1,1);
+    arc2(g,O,34,[0,-1],[-Math.sin(a),-Math.cos(a)],CLR.T,'α=30°');
+    const arcB=el('path',{fill:'none',stroke:CLR.T,'stroke-width':1.6},g);
+    const arcBT=txt(g,0,0,'β',15,CLR.T,'middle',1,1);
+    const P0=[560,470],P1=[560,270],GL=200;
+    seg(g,P0[0]-20,P0[1]+14,P0[0]+90,P0[1]+14,'#999',1.2,'4 3');
+    seg(g,P1[0],P1[1],P0[0],P0[1],CLR.G,3,null,1);
+    txt(g,P1[0]-46,(P0[1]+P1[1])/2,'G 恒定',13.5,CLR.G,'middle',1);
+    const eA=seg(g,0,0,0,0,CLR.A,3,null,1), eB=seg(g,0,0,0,0,CLR.B,3,null,1);
+    const labA=txt(g,0,0,'T\u2090 定向',13,CLR.A,'start',1);
+    const labB=txt(g,0,0,'T\u2091 转动',13,CLR.B,'end',1);
+    const uA=[-Math.sin(a),-Math.cos(a)];
+    seg(g,P0[0],P0[1],P0[0]+uA[0]*290,P0[1]+uA[1]*290,CLR.A,1.1,'5 4');
+    const bMin=(90-al)*Math.PI/180;
+    const F1m=GL*Math.sin(bMin)/Math.sin(a+bMin);
+    const Pm=add(P0,mul(uA,F1m));
+    seg(g,P1[0],P1[1],Pm[0],Pm[1],CLR.B,1.2,'5 4');
+    txt(g,Pm[0]-6,Pm[1]-10,'T\u2091最小=G·sinα (T\u2091⊥T\u2090)',12,CLR.B,'end',1);
+    const eq=txt(g,60,496,'',14,'#333','start',1);
+    const con=txt(g,60,524,'',13.5,'#8a5a00','start',1);
+    function update(){
+      const b=g._beta*Math.PI/180;
+      const B=[O[0]+L*Math.sin(b),O[1]-L*Math.cos(b)];
+      ropeB.setAttribute('x2',B[0]);ropeB.setAttribute('y2',B[1]);
+      dotB.setAttribute('cx',B[0]);dotB.setAttribute('cy',B[1]);
+      arcB.setAttribute('d',`M ${O[0]+52*Math.sin(b)} ${O[1]-52*Math.cos(b)} A 52 52 0 0 0 ${O[0]} ${O[1]-52}`);
+      arcBT.setAttribute('x',O[0]+74*Math.sin(b/2)-4);arcBT.setAttribute('y',O[1]-74*Math.cos(b/2)+4);
+      const TA=Math.sin(b)/Math.sin(a+b), TB=Math.sin(a)/Math.sin(a+b), S1=78;
+      const uB=[Math.sin(b),-Math.cos(b)];
+      fA.setAttribute('x2',O[0]+uA[0]*TA*S1);fA.setAttribute('y2',O[1]+uA[1]*TA*S1);
+      fB.setAttribute('x2',O[0]+uB[0]*TB*S1);fB.setAttribute('y2',O[1]+uB[1]*TB*S1);
+      ltA.setAttribute('x',O[0]+uA[0]*TA*S1-16);ltA.setAttribute('y',O[1]+uA[1]*TA*S1);
+      ltB.setAttribute('x',O[0]+uB[0]*TB*S1+10);ltB.setAttribute('y',O[1]+uB[1]*TB*S1-4);
+      fG.setAttribute('x1',O[0]-2);fG.setAttribute('y1',O[1]+64);
+      fG.setAttribute('x2',O[0]-2);fG.setAttribute('y2',O[1]+96);
+      const F1=GL*TA, P=add(P0,mul(uA,F1));
+      eA.setAttribute('x1',P0[0]);eA.setAttribute('y1',P0[1]);
+      eA.setAttribute('x2',P[0]);eA.setAttribute('y2',P[1]);
+      eB.setAttribute('x1',P[0]);eB.setAttribute('y1',P[1]);
+      eB.setAttribute('x2',P1[0]);eB.setAttribute('y2',P1[1]);
+      labA.setAttribute('x',(P0[0]+P[0])/2+10);labA.setAttribute('y',(P0[1]+P[1])/2);
+      labB.setAttribute('x',(P[0]+P1[0])/2-8);labB.setAttribute('y',(P[1]+P1[1])/2-8);
+      eq.textContent=`T\u2090 = ${TA.toFixed(2)}G，T\u2091 = ${TB.toFixed(2)}G`;
+      con.textContent=g._beta>90-al?'T\u2091 随 β 减小而减小':'T\u2091 已过最小点、开始增大';
+      $('info').innerHTML=`α = 30°（T\u2090 方向不变），β = ${g._beta.toFixed(1)}°（T\u2091 从水平转向竖直）<br>`+
+        `<span style="color:${CLR.A}">T\u2090 = G·sinβ/sin(α+β) = ${TA.toFixed(2)}G</span>（一直减小）　`+
+        `<span style="color:${CLR.B}">T\u2091 = G·sinα/sin(α+β) = ${TB.toFixed(2)}G</span>（先减后增，β = 60° 时最小 = G·sinα）`;
+    }
+    return{update,
+      controls:[
+        {type:'range',label:'β（T\u2091 与竖直夹角）',min:0,max:90,step:1,get:()=>g._beta,set:v=>{g._beta=v;update();}},
+        {type:'play',label:'▶ T\u2091 从水平转向竖直',run:()=>{g._beta=90;
+          return()=>{g._beta-=1;if(g._beta<=0){g._beta=0;return false;}return true;};}}
+      ]};
+  }};
+
+/* ---------- 3 相似三角形法：杆-绳-墙（同侧对比，无拖影） ---------- */
+METHODS.m3={name:'③ 相似三角形法',
+  theory:{principle:'力的矢量三角形与几何三角形（由杆、绳、墙间距等实际长度构成）相似——三力分别平行于三边——对应边成比例，把“力的变化”化为“长度的变化”。',
+    steps:'找几何三角形（杆、绳、墙）→ 验证三力分别与三边平行 → 写比例式 → 由几何量（间距 d）变化讨论力。',
+    apply:'题目给出明确几何长度（杆长、绳长、间距 d）而角度不便计算时；力三角形与某几何三角形相似是标志。',
+    formula:'T/G = CB/AB = L₂/d，N/G = CA/AB = L₁/d ⇒ T = L₂G/d，N = L₁G/d（d 为墙上 A、B 间距）。'},
+  build(){
+    const g=el('g',{});
+    g._d=150;
+    const L1=190,L2=240, A=[85,340];
+    seg(g,85,110,85,470,'#333',5);
+    for(let y=120;y<=460;y+=15)seg(g,85,y,77,y+8,'#777',1.1);
+    el('circle',{cx:A[0],cy:A[1],r:5,fill:'#fff',stroke:'#222','stroke-width':2.4},g);
+    txt(g,A[0]-12,A[1]+6,'A',15,'#333','end',1,1);
+    const rod=seg(g,A[0],A[1],0,0,CLR.N,5);
+    const rope=seg(g,0,0,0,0,CLR.A,2);
+    const dotB=el('circle',{r:4.5,fill:'#fff',stroke:'#222','stroke-width':2.2},g);
+    const lB=txt(g,0,0,'B',15,'#333','end',1,1);
+    const lC=txt(g,0,0,'C',15,'#333','start',1,1);
+    const hang=seg(g,0,0,0,0,'#444',2);
+    const box=el('rect',{width:24,height:24,fill:'#fff',stroke:'#222','stroke-width':2.3},g);
+    const eAB=seg(g,0,0,0,0,CLR.G,1.6,'6 4');
+    const ld=txt(g,0,0,'d',14,CLR.G,'end',1,1);
+    const lL2=txt(g,0,0,'L\u2082',14,CLR.A,'middle',1,1);
+    const lL1=txt(g,0,0,'L\u2081',14,CLR.N,'middle',1,1);
+    const fG=seg(g,0,0,0,0,CLR.G,2.6,null,1);
+    const fT=seg(g,0,0,0,0,CLR.A,2.6,null,1);
+    const fN=seg(g,0,0,0,0,CLR.N,2.6,null,1);
+    const lg=txt(g,0,0,'G',15,CLR.G,'start',1,1);
+    const lt=txt(g,0,0,'T',15,CLR.A,'start',1,1);
+    const ln=txt(g,0,0,'N',15,CLR.N,'start',1,1);
+    /* 右区：几何三角形 与 力三角形 同侧对比（全部持久元素，杜绝拖影） */
+    txt(g,548,86,'几何三角形 ∽ 力的矢量三角形',14,'#555','middle',1);
+    txt(g,548,106,'同色对应：边 ∥ 力（G绿　T蓝　N橙）',12,'#777','middle',1);
+    const gAB=seg(g,0,0,0,0,CLR.G,2.6);
+    const gBC=seg(g,0,0,0,0,CLR.A,2.6);
+    const gCA=seg(g,0,0,0,0,CLR.N,2.6);
+    const gAt=txt(g,0,0,'A',12.5,'#333','end',1);
+    const gBt=txt(g,0,0,'B',12.5,'#333','end',1);
+    const gCt=txt(g,0,0,'C',12.5,'#333','start',1);
+    const gDt=txt(g,0,0,'d',12.5,CLR.G,'end',1,1);
+    const gL2t=txt(g,0,0,'L\u2082',12.5,CLR.A,'middle',1,1);
+    const gL1t=txt(g,0,0,'L\u2081',12.5,CLR.N,'middle',1,1);
+    const eT=seg(g,0,0,0,0,CLR.A,2.8,null,1);
+    const eN=seg(g,0,0,0,0,CLR.N,2.8,null,1);
+    const eG=seg(g,0,0,0,0,CLR.G,2.8,null,1);
+    const eTt=txt(g,0,0,'T',13.5,CLR.A,'end',1,1);
+    const eNt=txt(g,0,0,'N',13.5,CLR.N,'middle',1,1);
+    const eGt=txt(g,0,0,'G',13.5,CLR.G,'start',1,1);
+    const ratio=txt(g,448,508,'',13.5,'#333','start',1);
+    const ratio2=txt(g,448,532,'',13.5,'#333','start',1);
+    function update(){
+      const d=g._d;
+      const B=[85,340-d];
+      const cos=(L2*L2-L1*L1-d*d)/(2*L1*d), sin=Math.sqrt(Math.max(0,1-cos*cos));
+      const C=[85+L1*sin, 340+L1*cos];
+      rod.setAttribute('x2',C[0]);rod.setAttribute('y2',C[1]);
+      rope.setAttribute('x1',C[0]);rope.setAttribute('y1',C[1]);
+      rope.setAttribute('x2',B[0]);rope.setAttribute('y2',B[1]);
+      dotB.setAttribute('cx',B[0]);dotB.setAttribute('cy',B[1]);
+      lB.setAttribute('x',B[0]-9);lB.setAttribute('y',B[1]+4);
+      lC.setAttribute('x',C[0]+7);lC.setAttribute('y',C[1]-6);
+      hang.setAttribute('x1',C[0]);hang.setAttribute('y1',C[1]);
+      hang.setAttribute('x2',C[0]);hang.setAttribute('y2',C[1]+40);
+      box.setAttribute('x',C[0]-12);box.setAttribute('y',C[1]+40);
+      eAB.setAttribute('x1',A[0]);eAB.setAttribute('y1',A[1]);
+      eAB.setAttribute('x2',B[0]);eAB.setAttribute('y2',B[1]);
+      ld.setAttribute('x',68);ld.setAttribute('y',(A[1]+B[1])/2+4);
+      lL2.setAttribute('x',(C[0]+B[0])/2-14);lL2.setAttribute('y',(C[1]+B[1])/2);
+      lL1.setAttribute('x',(C[0]+A[0])/2-4);lL1.setAttribute('y',(C[1]+A[1])/2+16);
+      const T=L2/d, N=L1/d, S=52;
+      const uT=norm(sub(B,C)), uN=norm(sub(C,A));
+      fG.setAttribute('x1',C[0]);fG.setAttribute('y1',C[1]);
+      fG.setAttribute('x2',C[0]);fG.setAttribute('y2',C[1]+S);
+      fT.setAttribute('x1',C[0]);fT.setAttribute('y1',C[1]);
+      fT.setAttribute('x2',C[0]+uT[0]*T*S);fT.setAttribute('y2',C[1]+uT[1]*T*S);
+      fN.setAttribute('x1',C[0]);fN.setAttribute('y1',C[1]);
+      fN.setAttribute('x2',C[0]+uN[0]*N*S);fN.setAttribute('y2',C[1]+uN[1]*N*S);
+      lg.setAttribute('x',C[0]+7);lg.setAttribute('y',C[1]+S+12);
+      lt.setAttribute('x',C[0]+uT[0]*T*S-14);lt.setAttribute('y',C[1]+uT[1]*T*S);
+      ln.setAttribute('x',C[0]+uN[0]*N*S+6);ln.setAttribute('y',C[1]+uN[1]*N*S+4);
+      /* 几何三角形（缩放映射） */
+      const M=p=>[460+(p[0]-85)*0.52, 120+(p[1]-190)*0.52];
+      const Ap=M(A), Bp=M(B), Cp=M(C);
+      gAB.setAttribute('x1',Ap[0]);gAB.setAttribute('y1',Ap[1]);
+      gAB.setAttribute('x2',Bp[0]);gAB.setAttribute('y2',Bp[1]);
+      gBC.setAttribute('x1',Bp[0]);gBC.setAttribute('y1',Bp[1]);
+      gBC.setAttribute('x2',Cp[0]);gBC.setAttribute('y2',Cp[1]);
+      gCA.setAttribute('x1',Cp[0]);gCA.setAttribute('y1',Cp[1]);
+      gCA.setAttribute('x2',Ap[0]);gCA.setAttribute('y2',Ap[1]);
+      gAt.setAttribute('x',Ap[0]-4);gAt.setAttribute('y',Ap[1]+4);
+      gBt.setAttribute('x',Bp[0]-4);gBt.setAttribute('y',Bp[1]+4);
+      gCt.setAttribute('x',Cp[0]+4);gCt.setAttribute('y',Cp[1]+4);
+      gDt.setAttribute('x',452);gDt.setAttribute('y',(Ap[1]+Bp[1])/2+4);
+      gL2t.setAttribute('x',(Bp[0]+Cp[0])/2+12);gL2t.setAttribute('y',(Bp[1]+Cp[1])/2);
+      gL1t.setAttribute('x',(Cp[0]+Ap[0])/2-6);gL1t.setAttribute('y',(Cp[1]+Ap[1])/2+16);
+      /* 力矢量三角形 */
+      const P0=[620,470], k=38;
+      const E1=[P0[0]+uT[0]*T*k, P0[1]+uT[1]*T*k];
+      const E2=[E1[0]+uN[0]*N*k, E1[1]+uN[1]*N*k];
+      eT.setAttribute('x1',P0[0]);eT.setAttribute('y1',P0[1]);
+      eT.setAttribute('x2',E1[0]);eT.setAttribute('y2',E1[1]);
+      eN.setAttribute('x1',E1[0]);eN.setAttribute('y1',E1[1]);
+      eN.setAttribute('x2',E2[0]);eN.setAttribute('y2',E2[1]);
+      eG.setAttribute('x1',E2[0]);eG.setAttribute('y1',E2[1]);
+      eG.setAttribute('x2',P0[0]);eG.setAttribute('y2',P0[1]);
+      eTt.setAttribute('x',(P0[0]+E1[0])/2-14);eTt.setAttribute('y',(P0[1]+E1[1])/2+12);
+      eNt.setAttribute('x',(E1[0]+E2[0])/2);eNt.setAttribute('y',(E1[1]+E2[1])/2-8);
+      eGt.setAttribute('x',E2[0]+8);eGt.setAttribute('y',(E2[1]+P0[1])/2+4);
+      ratio.textContent=`T/G = L\u2082/d = ${(L2/d).toFixed(2)} → T = ${(L2/d).toFixed(2)}G`;
+      ratio2.textContent=`N/G = L\u2081/d = ${(L1/d).toFixed(2)} → N = ${(L1/d).toFixed(2)}G`;
+      $('info').innerHTML=`d = AB = ${d}（墙上 A、B 间距，B 在 A 上方）　`+
+        `<span style="color:${CLR.A}">T = ${(L2/d).toFixed(2)}G</span>（绳 CB，受拉）　`+
+        `<span style="color:${CLR.N}">N = ${(L1/d).toFixed(2)}G</span>（杆 CA，受压）<br>`+
+        `B 沿墙下移 → d 减小 → <b>T、N 都增大</b>；右图中几何三角形与力三角形同色边一一平行对应`;
+    }
+    return{update,
+      controls:[
+        {type:'range',label:'d（B 的位置）',min:70,max:150,step:1,get:()=>g._d,set:v=>{g._d=v;update();}},
+        {type:'play',label:'▶ B 沿墙缓慢下移',run:()=>{g._d=150;
+          return()=>{g._d-=1.2;if(g._d<=70){g._d=70;return false;}return true;};}}
+      ]};
+  }};
+
+/* ---------- 4 辅助圆法：恒弦 + 圆周角不变 ---------- */
+METHODS.m4={name:'④ 辅助圆法',
+  theory:{principle:'三力平衡中一个力恒定（G），另两个力都变化但夹角 α 不变时，由“同弧圆周角相等”，两变力的交点必在以 G 为固定弦、圆周角为 α 的辅助圆弧上移动——两变力的大小等于两段弦长，看弦长变化即知力如何变。',
+    steps:'识别特征（两变力夹角恒定）→ 把恒力 G 反画为弦 → 以 G 为弦、圆周角 = α 作辅助圆 → 顶点沿弧移动，按弦长判断力；某变力对应弦恰为直径时最大。',
+    apply:'标志是“两个变力的夹角保持不变”，如斜面倾角变化而挡板与斜面夹角不变、或被机构约束的两绳夹角恒定等。',
+    formula:'辅助圆半径 R = G/(2sinα)（α 为两变力夹角）；两变力大小 = 两段弦长。最大值：弦为直径时 F_max = G/sinα。'},
+  build(){
+    const g=el('g',{});
+    g._al=60; g._t=0.5;
+    const P0=[340,470], P1=[340,310], GL=160;
+    seg(g,P1[0],P1[1],P0[0],P0[1],CLR.G,3.2,null,1);
+    txt(g,P0[0]+10,(P0[1]+P1[1])/2,'G（恒力，固定弦）',14,CLR.G,'start',1);
+    const circ=el('circle',{fill:'none',stroke:CLR.P,'stroke-width':1.5,'stroke-dasharray':'6 4'},g);
+    const cO=el('circle',{r:3.5,fill:CLR.P},g);
+    const lO=txt(g,0,0,"O'",14,CLR.P,'start',1,1);
+    const lR=seg(g,0,0,0,0,CLR.P,1.1,'3 3');
+    const lRt=txt(g,0,0,'R=G/2sinα',12.5,CLR.P,'start',1);
+    const e1=seg(g,0,0,0,0,CLR.A,3,null,1);
+    const e2=seg(g,0,0,0,0,CLR.B,3,null,1);
+    const dP=el('circle',{r:6,fill:'#fff',stroke:CLR.P,'stroke-width':2.6},g);
+    const lP=txt(g,0,0,'P',15,CLR.P,'start',1,1);
+    const angA=el('path',{fill:'none',stroke:'#555','stroke-width':1.4},g);
+    const angT=txt(g,0,0,'α 不变',13,'#555','start',1);
+    txt(g,30,40,'辅助圆：以恒力 G 为弦、圆周角 = 两变力夹角 α',14.5,'#555','start',1);
+    txt(g,30,60,'P 沿弧移动 → 两段弦长 = 两变力大小',14.5,'#555','start',1);
+    const eq=txt(g,30,88,'',14,'#333','start',1);
+    const con=txt(g,30,112,'',13.5,'#8a5a00','start',1);
+    function update(){
+      const al=g._al*Math.PI/180;
+      const Rc=GL/(2*Math.sin(al));
+      const Oc=[P0[0]+Rc*Math.cos(al), (P0[1]+P1[1])/2];
+      circ.setAttribute('cx',Oc[0]);circ.setAttribute('cy',Oc[1]);circ.setAttribute('r',Rc);
+      cO.setAttribute('cx',Oc[0]);cO.setAttribute('cy',Oc[1]);
+      lO.setAttribute('x',Oc[0]+6);lO.setAttribute('y',Oc[1]-6);
+      const f0=Math.atan2(P0[1]-Oc[1],P0[0]-Oc[0]), f1=Math.atan2(P1[1]-Oc[1],P1[0]-Oc[0]);
+      let d=(f1-f0)*180/Math.PI;while(d<=-180)d+=360;while(d>180)d-=360;
+      const shortDir=d>0?1:-1, shortSpan=Math.abs(d);
+      let dir,span;
+      if(g._al<90){dir=-shortDir;span=360-shortSpan;}
+      else{dir=shortDir;span=shortSpan;}
+      const f=(f0+dir*span*g._t)*Math.PI/180;
+      const P=[Oc[0]+Rc*Math.cos(f),Oc[1]+Rc*Math.sin(f)];
+      e1.setAttribute('x1',P0[0]);e1.setAttribute('y1',P0[1]);
+      e1.setAttribute('x2',P[0]);e1.setAttribute('y2',P[1]);
+      e2.setAttribute('x1',P[0]);e2.setAttribute('y1',P[1]);
+      e2.setAttribute('x2',P1[0]);e2.setAttribute('y2',P1[1]);
+      dP.setAttribute('cx',P[0]);dP.setAttribute('cy',P[1]);
+      lP.setAttribute('x',P[0]+9);lP.setAttribute('y',P[1]-6);
+      const rr=30;
+      const u1=norm(sub(P0,P)), u2=norm(sub(P1,P));
+      const cr=u1[0]*u2[1]-u1[1]*u2[0];
+      angA.setAttribute('d',`M ${P[0]+rr*u1[0]} ${P[1]+rr*u1[1]} A ${rr} ${rr} 0 0 ${cr>0?1:0} ${P[0]+rr*u2[0]} ${P[1]+rr*u2[1]}`);
+      angT.setAttribute('x',P[0]+(u1[0]+u2[0])*26-16);angT.setAttribute('y',P[1]+(u1[1]+u2[1])*26+4);
+      lR.setAttribute('x1',Oc[0]);lR.setAttribute('y1',Oc[1]);
+      lR.setAttribute('x2',P[0]);lR.setAttribute('y2',P[1]);
+      lRt.setAttribute('x',(Oc[0]+P[0])/2+6);lRt.setAttribute('y',(Oc[1]+P[1])/2);
+      const F1=Math.hypot(P[0]-P0[0],P[1]-P0[1])/GL, F2=Math.hypot(P1[0]-P[0],P1[1]-P[1])/GL;
+      eq.textContent=`F\u2081 = ${F1.toFixed(2)}G　F\u2082 = ${F2.toFixed(2)}G　（R = G/2sinα = ${(Rc/GL).toFixed(2)}G）`;
+      con.textContent=(g._al<90
+        ? (Math.abs(F1-1/Math.sin(al))<0.03?'★ F\u2081 为直径 → F\u2081最大 = G/sinα':'α<90°：P 沿优弧移动，弦先增后减')
+        : 'α>90°：P 沿劣弧移动，弧中点处两力相等且最小');
+      $('info').innerHTML=`两变力夹角 α = ${g._al}° 恒定，G 恒定<br>`+
+        `<span style="color:${CLR.A}">F\u2081 = ${F1.toFixed(2)}G</span>　`+
+        `<span style="color:${CLR.B}">F\u2082 = ${F2.toFixed(2)}G</span>　`+
+        `（F\u2081 为直径时最大 = G/sinα = ${(1/Math.sin(al)).toFixed(2)}G）`;
+    }
+    return{update,
+      controls:[
+        {type:'range',label:'α（两变力夹角）',min:30,max:150,step:5,get:()=>g._al,set:v=>{g._al=v;update();}},
+        {type:'range',label:'P 位置',min:0,max:1,step:0.005,get:()=>g._t,set:v=>{g._t=v;update();}},
+        {type:'play',label:'▶ P 沿辅助圆弧移动',run:()=>{g._t=0;
+          return()=>{g._t+=0.006;if(g._t>=1){g._t=1;return false;}return true;};}}
+      ]};
+  }};
+
+/* ---------- 5 拉密定理（正弦定理） ---------- */
+METHODS.m5={name:'⑤ 拉密定理（正弦定理）',
+  theory:{principle:'共点三力平衡时，每个力与其“对角”（另外两力方向之间的夹角）的正弦成正比。它就是正弦定理用在封闭力三角形上的结果。',
+    steps:'找共点三力 → 量出三个方向夹角（注意可能是钝角，三者之和 = 360°）→ 按力—对角配对写出比例式 → 求解或讨论动态变化。',
+    apply:'三力平衡且角度关系清晰时可直接定量求力；动态问题中角度随位置变化，代入即得力的变化规律。',
+    formula:'F₁/sinα₁ = F₂/sinα₂ = F₃/sinα₃（α₁ 为 F₁ 的对角 = 另两力夹角）。例：Tₐ = G·sinβ/sin(α+β)，Tₑ = G·sinα/sin(α+β)。'},
+  build(){
+    const g=el('g',{});
+    g._al=30; g._be=60;
+    const O=[240,235], L=140;
+    seg(g,120,85,430,85,'#333',5);
+    for(let x=130;x<=420;x+=15)seg(g,x,85,x-8,94,'#777',1.1);
+    const ropeA=seg(g,O[0],O[1],0,0,'#444',2);
+    const ropeB=seg(g,O[0],O[1],0,0,'#444',2);
+    const lA=txt(g,0,0,'A',15,'#333','middle',1,1);
+    const lB=txt(g,0,0,'B',15,'#333','middle',1,1);
+    el('circle',{cx:O[0],cy:O[1],r:4.5,fill:'#222'},g);
+    txt(g,O[0]-16,O[1]+6,'O',15,'#333','end',1,1);
+    seg(g,O[0],O[1],O[0],O[1]+58,'#444',2);
+    el('rect',{x:O[0]-14,y:O[1]+58,width:28,height:28,fill:'#fff',stroke:'#222','stroke-width':2.3},g);
+    seg(g,O[0]-2,O[1]+90,O[0]-2,O[1]+124,CLR.G,2.6,null,1);
+    txt(g,O[0]+8,O[1]+114,'G',15,CLR.G,'start',1,1);
+    const fA=seg(g,O[0],O[1],0,0,CLR.A,2.8,null,1);
+    const fB=seg(g,O[0],O[1],0,0,CLR.B,2.8,null,1);
+    const ltA=txt(g,0,0,'T\u2090',15,CLR.A,'middle',1,1);
+    const ltB=txt(g,0,0,'T\u2091',15,CLR.B,'middle',1,1);
+    const arc1=el('path',{fill:'none',stroke:CLR.A,'stroke-width':1.8},g);
+    const t1=txt(g,0,0,'',13,CLR.A,'middle',1);
+    const arc2_=el('path',{fill:'none',stroke:CLR.B,'stroke-width':1.8},g);
+    const t2=txt(g,0,0,'',13,CLR.B,'middle',1);
+    const arc3=el('path',{fill:'none',stroke:CLR.G,'stroke-width':1.8},g);
+    const t3=txt(g,0,0,'',13,CLR.G,'middle',1);
+    txt(g,567,80,'拉密定理（正弦定理）',15,'#555','middle',1);
+    txt(g,567,104,'F / sin(对角) = 定值',13,'#777','middle',1);
+    const r1=txt(g,472,150,'',12.5,CLR.A,'start',1);
+    const r2=txt(g,472,176,'',12.5,CLR.B,'start',1);
+    const r3=txt(g,472,202,'',12.5,CLR.G,'start',1);
+    const rE=txt(g,472,232,'',13.5,'#333','start',1);
+    txt(g,472,262,'对角 = 另外两力的夹角：',12.5,'#555','start',1);
+    const rN=txt(g,472,286,'',12,CLR.A,'start',1);
+    const rN2=txt(g,472,308,'',12,CLR.B,'start',1);
+    const rN3=txt(g,472,330,'',12,CLR.G,'start',1);
+    function update(){
+      const a=g._al*Math.PI/180, b=g._be*Math.PI/180;
+      const uA=[-Math.sin(a),-Math.cos(a)], uB=[Math.sin(b),-Math.cos(b)];
+      const A=[O[0]+L*uA[0],O[1]+L*uA[1]], B=[O[0]+L*uB[0],O[1]+L*uB[1]];
+      ropeA.setAttribute('x2',A[0]);ropeA.setAttribute('y2',A[1]);
+      ropeB.setAttribute('x2',B[0]);ropeB.setAttribute('y2',B[1]);
+      lA.setAttribute('x',A[0]);lA.setAttribute('y',A[1]-8);
+      lB.setAttribute('x',B[0]);lB.setAttribute('y',B[1]-8);
+      const TA=Math.sin(b)/Math.sin(a+b), TB=Math.sin(a)/Math.sin(a+b), S=80;
+      fA.setAttribute('x2',O[0]+uA[0]*TA*S);fA.setAttribute('y2',O[1]+uA[1]*TA*S);
+      fB.setAttribute('x2',O[0]+uB[0]*TB*S);fB.setAttribute('y2',O[1]+uB[1]*TB*S);
+      ltA.setAttribute('x',O[0]+uA[0]*TA*S-16);ltA.setAttribute('y',O[1]+uA[1]*TA*S);
+      ltB.setAttribute('x',O[0]+uB[0]*TB*S+12);ltB.setAttribute('y',O[1]+uB[1]*TB*S-4);
+      const uG=[0,1];
+      const draw=(elm,tlm,r,u1,u2,lb)=>{
+        const a1=Math.atan2(u1[1],u1[0]),a2=Math.atan2(u2[1],u2[0]);
+        let dd=(a2-a1)*180/Math.PI;while(dd<=-180)dd+=360;while(dd>180)dd-=360;
+        elm.setAttribute('d',`M ${O[0]+r*u1[0]} ${O[1]+r*u1[1]} A ${r} ${r} 0 ${Math.abs(dd)>180?1:0} ${dd>0?1:0} ${O[0]+r*u2[0]} ${O[1]+r*u2[1]}`);
+        const am=a1+dd/2;
+        tlm.setAttribute('x',O[0]+(r+22)*Math.cos(am)-14);
+        tlm.setAttribute('y',O[1]+(r+22)*Math.sin(am)+4);
+        tlm.textContent=lb;
+      };
+      draw(arc1,t1,40,uB,uG,(180-g._be).toFixed(0)+'°');
+      draw(arc2_,t2,58,uG,uA,(180-g._al).toFixed(0)+'°');
+      draw(arc3,t3,78,uA,uB,'α+β='+(g._al+g._be).toFixed(0)+'°');
+      r1.textContent=`T\u2090 = G·sinβ/sin(α+β) = ${TA.toFixed(2)}G`;
+      r2.textContent=`T\u2091 = G·sinα/sin(α+β) = ${TB.toFixed(2)}G`;
+      r3.textContent=`G/sin(α+β) = 1/${Math.sin(a+b).toFixed(3)} = ${(1/Math.sin(a+b)).toFixed(2)}`;
+      rE.textContent=`→ T\u2090 = ${TA.toFixed(2)}G，T\u2091 = ${TB.toFixed(2)}G`;
+      rN.textContent=`T\u2090 的对角 = 180°−β = ${(180-g._be).toFixed(0)}°`;
+      rN2.textContent=`T\u2091 的对角 = 180°−α = ${(180-g._al).toFixed(0)}°`;
+      rN3.textContent=`G 的对角 = α+β = ${(g._al+g._be).toFixed(0)}°`;
+      $('info').innerHTML=`α = ${g._al}°、β = ${g._be}°　`+
+        `<span style="color:${CLR.A}">T\u2090 = ${TA.toFixed(2)}G</span>　`+
+        `<span style="color:${CLR.B}">T\u2091 = ${TB.toFixed(2)}G</span>　`+
+        `每个力与“其余两力夹角的正弦”成正比（图中弧线与力按颜色配对）`;
+    }
+    return{update,
+      controls:[
+        {type:'range',label:'α',min:15,max:60,step:1,get:()=>g._al,set:v=>{g._al=v;update();}},
+        {type:'range',label:'β',min:5,max:85,step:1,get:()=>g._be,set:v=>{g._be=v;update();}},
+        {type:'play',label:'▶ 播放 β 变化',run:()=>{g._be=5;
+          return()=>{g._be+=1;if(g._be>=85){g._be=85;return false;}return true;};}}
+      ]};
+  }};
+
+/* ================= 界面与切换 ================= */
+let cur=null, curBuild=null;
+const tabs=$('tabs');
+Object.keys(METHODS).forEach(k=>{
+  const b=document.createElement('button');
+  b.textContent=METHODS[k].name;b.dataset.k=k;
+  b.onclick=()=>switchTo(k);tabs.appendChild(b);
+});
+function switchTo(k){
+  stopTimer();
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+  stage.innerHTML='';markerDef('#000');
+  $('ctrls').innerHTML='';$('info').innerHTML='';
+  const m=METHODS[k];
+  $('side').innerHTML=`<h3>${m.name}</h3>
+    <b class="t">【原理】</b>${m.theory.principle}<br><br>
+    <b class="t">【步骤】</b>${m.theory.steps}<br><br>
+    <b class="t">【适用】</b>${m.theory.apply}<br><br>
+    <b class="t">【公式（直接代入）】</b>${m.theory.formula}`;
+  curBuild=m.build();
+  curBuild.update();
+  curBuild.controls.forEach(c=>{
+    if(c.type==='range'){
+      const lab=document.createElement('label');
+      lab.innerHTML=`${c.label} = <b>${c.get()}</b>`;
+      const inp=document.createElement('input');
+      inp.type='range';inp.min=c.min;inp.max=c.max;inp.step=c.step;inp.value=c.get();
+      inp.oninput=()=>{c.set(+inp.value);lab.innerHTML=`${c.label} = <b>${c.get()}</b>`;};
+      $('ctrls').appendChild(lab);$('ctrls').appendChild(inp);
+      c._inp=inp;c._lab=lab;
+    }else if(c.type==='play'){
+      const btn=document.createElement('button');
+      btn.textContent=c.label;btn.dataset.label=c.label;btn.dataset.play='0';
+      btn.onclick=()=>{
+        if(btn.dataset.play==='1'){stopTimer();return;}
+        stopTimer();
+        const step=c.run();
+        btn.dataset.play='1';btn.textContent='⏸ 暂停';
+        timer=setInterval(()=>{
+          const more=step();
+          curBuild.update();
+          curBuild.controls.forEach(cc=>{
+            if(cc._inp){cc._inp.value=cc.get();
+              cc._lab.innerHTML=`${cc.label} = <b>${cc.get()}</b>`;}
+          });
+          if(!more)stopTimer();
+        },33);
+      };
+      $('ctrls').appendChild(btn);
+    }
+  });
+}
+switchTo('m1');
+</script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>【典例4】细线套双定滑轮 + 圆环 —— 图解法（可调节）</title>
+<style>
+  body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:#f7f7f2;
+       display:flex;flex-direction:column;align-items:center;margin:0;padding:14px;}
+  h3{margin:6px 0 10px;}
+  svg{background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15);border-radius:8px;}
+  .panel{margin:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;
+         background:#fff;padding:10px 16px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);}
+  input[type=range]{width:230px;}
+  button{padding:6px 13px;cursor:pointer;border:1px solid #888;border-radius:5px;background:#eee;}
+  button:hover{background:#ddd;}
+  #info{background:#fff;padding:8px 20px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);
+        font-size:14.5px;line-height:1.8;text-align:center;max-width:980px;}
+  #opts{width:940px;background:#fff;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);
+        padding:10px 16px;margin-top:10px;font-size:14px;line-height:1.75;}
+  .opt{padding:5px 12px;margin:5px 0;border-left:4px solid #e0e0d6;background:#fafaf4;border-radius:0 6px 6px 0;}
+  .opt.active{background:#fff6df;border-left-color:#c47f17;}
+  .good{color:#2e8b57;font-weight:bold;} .bad{color:#d0342c;font-weight:bold;}
+</style>
+</head>
+<body>
+
+<h3>【典例4】细线套在两光滑定滑轮上、圆环穿线 —— 图解法求 F（调节绳中张力 T）</h3>
+
+<svg id="scene" width="1060" height="640" viewBox="0 0 1060 640">
+  <defs>
+    <marker id="arrT" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#1e66d0"/></marker>
+    <marker id="arrG" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#2e8b57"/></marker>
+    <marker id="arrF" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#d0342c"/></marker>
+    <marker id="arrR" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"
+            markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#7a4fa0"/></marker>
+  </defs>
+
+  <!-- 顶棚与墙 -->
+  <line x1="300" y1="76" x2="560" y2="76" stroke="#333" stroke-width="3"/>
+  <g id="ceilHatch" stroke="#555" stroke-width="1.2"></g>
+  <line x1="150" y1="140" x2="150" y2="560" stroke="#333" stroke-width="3"/>
+  <g id="wallHatch" stroke="#555" stroke-width="1.2"></g>
+
+  <!-- 闭合绳环：C → A → B → C（AC竖直、AB斜边、BC水平） -->
+  <path d="M 460,335 L 460,104 L 192,335 L 460,335" fill="none" stroke="#444" stroke-width="1.8"/>
+  <line x1="460" y1="76" x2="460" y2="96" stroke="#333" stroke-width="3"/>
+  <line x1="150" y1="335" x2="184" y2="335" stroke="#333" stroke-width="3"/>
+
+  <!-- C 处 45° 角标记（CA 竖直 与 T合 之间） -->
+  <path d="M 460,305 A 30 30 0 0 0 438.8,313.8" fill="none" stroke="#7a4fa0" stroke-width="1.4"/>
+  <text x="434" y="303" font-size="11" fill="#7a4fa0" text-anchor="end">45°</text>
+
+  <!-- C 点受力（白衬线 + 彩色箭头） -->
+  <g id="forces">
+    <line id="c1" stroke="#fff" stroke-width="6.5" opacity="0.85" stroke-linecap="round"/>
+    <line id="c2" stroke="#fff" stroke-width="6.5" opacity="0.85" stroke-linecap="round"/>
+    <line id="cF" stroke="#fff" stroke-width="6.5" opacity="0.85" stroke-linecap="round"/>
+    <line id="p1" stroke="#7a4fa0" stroke-width="1.3" stroke-dasharray="5 4" opacity="0.8"/>
+    <line id="p2" stroke="#7a4fa0" stroke-width="1.3" stroke-dasharray="5 4" opacity="0.8"/>
+    <line id="t1" stroke="#1e66d0" stroke-width="3" marker-end="url(#arrT)"/>
+    <line id="t2" stroke="#1e66d0" stroke-width="3" marker-end="url(#arrT)"/>
+    <line id="tres" stroke="#7a4fa0" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#arrR)"/>
+    <line id="fg" stroke="#2e8b57" stroke-width="3" marker-end="url(#arrG)"/>
+    <line id="ff" stroke="#d0342c" stroke-width="3.2" marker-end="url(#arrF)"/>
+    <text id="lt1" font-size="14" fill="#1e66d0" font-weight="bold">T</text>
+    <text id="lt2" font-size="14" fill="#1e66d0" font-weight="bold" text-anchor="end">T</text>
+    <text id="ltr" font-size="13" fill="#7a4fa0" font-weight="bold" text-anchor="end">T合=√2T</text>
+    <text id="lmg" font-size="14" fill="#2e8b57" font-weight="bold">mg</text>
+    <text id="lff" font-size="15" fill="#d0342c" font-weight="bold">F</text>
+  </g>
+
+  <!-- 滑轮 A、B 与圆环 m（画在力之上） -->
+  <circle cx="460" cy="104" r="8" fill="#fff" stroke="#222" stroke-width="2.4"/>
+  <circle cx="460" cy="104" r="2" fill="#222"/>
+  <circle cx="192" cy="335" r="8" fill="#fff" stroke="#222" stroke-width="2.4"/>
+  <circle cx="192" cy="335" r="2" fill="#222"/>
+  <circle cx="460" cy="335" r="9" fill="#f7f2e4" stroke="#222" stroke-width="2.6"/>
+  <text x="474" y="99" font-size="16" font-weight="bold">A</text>
+  <text x="176" y="322" font-size="16" font-weight="bold" text-anchor="end">B</text>
+  <text x="443" y="356" font-size="16" font-weight="bold" text-anchor="end">C</text>
+  <text x="476" y="330" font-size="14" font-style="italic" font-weight="bold">m</text>
+
+  <!-- 场景说明 -->
+  <text x="170" y="592" font-size="12.5" fill="#666">AC = BC = L（AC 竖直、BC 水平，题设位形）；绳环总长 L·(2+√2) 保持不变</text>
+  <text x="170" y="612" font-size="12.5" fill="#666">同一根绳、光滑滑轮与圆环 ⇒ 两段张力相等 T₁ = T₂ = T，其合力 T合 = √2T、与竖直成 45°（指向左上）</text>
+
+  <!-- ===== 右侧：图解法矢量三角形 ===== -->
+  <text x="860" y="52" font-size="15.5" font-weight="bold" fill="#333" text-anchor="middle">图解法：矢量三角形</text>
+  <text x="860" y="74" font-size="12" fill="#777" text-anchor="middle">mg 恒定；T合 方向恒定（与竖直成45°）→ 端点 N 沿45°虚线滑动</text>
+  <text x="860" y="92" font-size="12" fill="#777" text-anchor="middle">F 为闭合边：F⃗ = N→O = −(T合⃗ + mg⃗)</text>
+
+  <g id="family"></g>
+  <line x1="948" y1="516" x2="748" y2="316" stroke="#1e66d0" stroke-width="1.3" stroke-dasharray="6 4" opacity="0.65"/>
+  <line x1="930" y1="498" x2="930" y2="398" stroke="#999" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <path d="M 930,464 A 34 34 0 0 0 906,474" fill="none" stroke="#555" stroke-width="1.4"/>
+  <text x="901" y="460" font-size="12" fill="#555" text-anchor="end">45°</text>
+  <circle cx="930" cy="440" r="3.2" fill="#222"/>
+  <circle cx="930" cy="498" r="2.6" fill="#2e8b57"/>
+  <text x="938" y="437" font-size="13" font-weight="bold">O</text>
+  <text x="938" y="506" font-size="12" fill="#2e8b57">M</text>
+  <text x="938" y="472" font-size="13" fill="#2e8b57" font-weight="bold">mg</text>
+
+  <polyline id="raSq" points="" fill="none" stroke="#d0342c" stroke-width="1.6" visibility="hidden"/>
+  <text id="raTxt" font-size="12" fill="#d0342c" font-weight="bold" text-anchor="end" visibility="hidden">F⊥T合</text>
+  <line id="pT" stroke="#1e66d0" stroke-width="3" marker-end="url(#arrT)"/>
+  <text id="pTt" font-size="13" fill="#1e66d0" font-weight="bold" text-anchor="end">T合=√2T</text>
+  <line id="pF" stroke="#d0342c" stroke-width="3.2" marker-end="url(#arrF)"/>
+  <text id="pFt" font-size="14" fill="#d0342c" font-weight="bold" text-anchor="middle">F</text>
+
+  <!-- 特殊状态标记点（位于45°轨迹上） -->
+  <circle cx="901" cy="469" r="3" fill="#2e8b57"/>
+  <text x="895" y="465" font-size="10.5" fill="#2e8b57" text-anchor="end">T=0.5mg → F最小</text>
+  <circle cx="872" cy="440" r="3" fill="#1e66d0"/>
+  <text x="866" y="432" font-size="10.5" fill="#1e66d0" text-anchor="end">T=mg → F=mg(水平)</text>
+  <circle cx="824.3" cy="392.3" r="3" fill="#e58a2f"/>
+  <text x="818" y="388" font-size="10.5" fill="#e58a2f" text-anchor="end">T≈1.82mg → F=2mg</text>
+
+  <text x="700" y="570" font-size="11" fill="#999">蓝虚线：T合 端点 N 的轨迹（过 M 的 45° 线）　灰虚线：不同 T 对应的闭合边 F（N→O）</text>
+  <text x="700" y="588" font-size="11" fill="#999">F最小 = O 到 45° 线的垂距 = mg·sin45° = √2mg/2（此时 F⊥T合）</text>
+  <text x="700" y="606" font-size="11" fill="#999">T→0 时 F→mg（竖直向上）；T 增大 F 先减后增；F 方向永不竖直向下</text>
+</svg>
+
+<div class="panel">
+  <label>绳张力 T = <b id="tVal">0.50 mg</b></label>
+  <input type="range" id="slider" min="0.05" max="3" value="0.5" step="0.01">
+  <label><input type="checkbox" id="showF" checked> 显示 C 点受力</label>
+  <button id="jA">T=0.5mg（F最小）</button>
+  <button id="jB">T=mg（F=mg）</button>
+  <button id="jC">T≈1.82mg（F=2mg）</button>
+  <button id="play">▶ 播放 T：0→3mg</button>
+</div>
+
+<div id="info"></div>
+
+<div id="opts">
+  <div style="font-size:13px;color:#8a5a00;margin-bottom:6px"><b>代入公式：</b>
+    两段张力合力 T合 = √2T（与竖直成45°）；三力平衡 ⇒ F = √(T² + (mg−T)²)，T ∈ (0, +∞)</div>
+  <div class="opt" id="optA"><b>A.（<span class="bad">✗ 错误</span>）</b>
+    "F 的大小不可能为 mg" —— 当 T = mg 时 F⃗ = (mg, 0)，即 F = mg、方向水平向右，完全可能。</div>
+  <div class="opt" id="optB"><b>B.（<span class="good">✓ 正确</span>）</b>
+    "F 的最小值为 √2mg/2" —— 当 T = mg/2 时 F ⊥ T合，Fmin = mg·sin45° = √2mg/2（矢量三角形中 O 到 45° 线的垂距最短）。</div>
+  <div class="opt" id="optC"><b>C.（<span class="bad">✗ 错误</span>）</b>
+    "大小为 2mg 的 F 对应两个方向" —— F=2mg ⇒ T²+(mg−T)² = 4mg² ⇒ T = (1+√7)mg/2（唯一正根），只有一个方向（偏离水平向下约 24.3°）。</div>
+  <div class="opt" id="optD"><b>D.（<span class="bad">✗ 错误</span>）</b>
+    "F 的方向可能竖直向下" —— F 竖直向下需 T = 0，与"细线始终有张力"矛盾；F 方向只能在（竖直向上 → 右下45°）之间扫动。</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+const K=58, Cx=460, Cy=335, OX=930, OY=440, MXp=930, MYp=498;   // K：1mg 对应 58px
+
+// 顶棚、墙斜线阴影
+(()=>{const g=$('ceilHatch');for(let x=308;x<=556;x+=14){
+  const l=document.createElementNS(NS,'line');
+  l.setAttribute('x1',x);l.setAttribute('y1',76);
+  l.setAttribute('x2',x-9);l.setAttribute('y2',65);g.appendChild(l);}})();
+(()=>{const g=$('wallHatch');for(let y=152;y<=552;y+=14){
+  const l=document.createElementNS(NS,'line');
+  l.setAttribute('x1',150);l.setAttribute('y1',y);
+  l.setAttribute('x2',139);l.setAttribute('y2',y+9);g.appendChild(l);}})();
+
+// 灰虚线族：不同 T 对应的闭合边 F（N_i → O）
+(()=>{const fam=$('family');
+ [0.25,0.5,0.75,1,1.25,1.5,1.8229,2.25,2.75].forEach(u=>{
+  const l=document.createElementNS(NS,'line');
+  l.setAttribute('x1',MXp-K*u);l.setAttribute('y1',MYp-K*u);
+  l.setAttribute('x2',OX);l.setAttribute('y2',OY);
+  l.setAttribute('stroke','#c9c9c9');l.setAttribute('stroke-width','1.1');
+  l.setAttribute('stroke-dasharray','4 3');fam.appendChild(l);});})();
+
+function setL(id,x1,y1,x2,y2){const e=$(id);
+  e.setAttribute('x1',x1);e.setAttribute('y1',y1);
+  e.setAttribute('x2',x2);e.setAttribute('y2',y2);}
+function setT(id,x,y,a){const e=$(id);e.setAttribute('x',x);e.setAttribute('y',y);
+  if(a)e.setAttribute('text-anchor',a);}
+
+function update(){
+  const u=parseFloat($('slider').value);
+  $('tVal').textContent=u.toFixed(2)+' mg';
+
+  /* ---- 场景：C 点四个力 ---- */
+  const t1x=Cx,      t1y=Cy-K*u;          // T₁ 竖直向上（沿 CA）
+  const t2x=Cx-K*u,  t2y=Cy;              // T₂ 水平向左（沿 CB）
+  const trx=Cx-K*u,  tryy=Cy-K*u;         // T合 端点（45° 左上）
+  const ffx=Cx+K*u,  ffy=Cy-K*(1-u);      // F 端点
+  setL('c1',Cx,Cy,t1x,t1y); setL('t1',Cx,Cy,t1x,t1y);
+  setL('c2',Cx,Cy,t2x,t2y); setL('t2',Cx,Cy,t2x,t2y);
+  setL('tres',Cx,Cy,trx,tryy);
+  setL('cF',Cx,Cy,ffx,ffy); setL('ff',Cx,Cy,ffx,ffy);
+  setL('fg',Cx,Cy,Cx,Cy+K);
+  setL('p1',t1x,t1y,trx,tryy); setL('p2',t2x,t2y,trx,tryy);   // 平行四边形虚边
+  const Fm=Math.hypot(u,1-u)||1e-9, dFx=u/Fm, dFy=(1-u)/Fm;
+  setT('lt1',t1x+8,t1y+14,'start');
+  setT('lt2',t2x-4,t2y+18,'end');
+  setT('ltr',trx-6,tryy-6,'end');
+  setT('lmg',Cx+9,Cy+K+4,'start');
+  setT('lff',ffx+dFx*14,ffy+dFy*14+4,'start');
+
+  /* ---- 右侧：矢量三角形 ---- */
+  const Nx=MXp-K*u, Ny=MYp-K*u;
+  setL('pT',MXp,MYp,Nx,Ny);
+  setT('pTt',Nx-9,Ny+16,'end');
+  setL('pF',Nx,Ny,OX,OY);
+  const mx=(Nx+OX)/2, my=(Ny+OY)/2;
+  let px=-(OY-Ny), py=OX-Nx; const pl=Math.hypot(px,py)||1; px/=pl; py/=pl;
+  if((MXp-mx)*px+(MYp-my)*py>0){px=-px;py=-py;}          // 标签放到背离 M 一侧
+  setT('pFt',mx+px*16,my+py*16+4,'middle');
+  if(Math.abs(u-0.5)<0.035){
+    let ax=(Nx-MXp),ay=(Ny-MYp);const al=Math.hypot(ax,ay);ax=ax/al*11;ay=ay/al*11;
+    let bx=(OX-Nx),by=(OY-Ny);const bl=Math.hypot(bx,by);bx=bx/bl*11;by=by/bl*11;
+    $('raSq').setAttribute('points',
+      `${Nx},${Ny} ${Nx+ax},${Ny+ay} ${Nx+ax+bx},${Ny+ay+by} ${Nx+bx},${Ny+by}`);
+    $('raSq').setAttribute('visibility','visible');
+    setT('raTxt',Nx-14,Ny+20,'end');
+    $('raTxt').setAttribute('visibility','visible');
+  }else{
+    $('raSq').setAttribute('visibility','hidden');
+    $('raTxt').setAttribute('visibility','hidden');
+  }
+
+  /* ---- 信息栏 ---- */
+  const theta=Math.atan2(1-u,u)*180/Math.PI;
+  const dirStr=Math.abs(theta)<0.5?'水平向右':
+    (theta>0?`斜向上 ${theta.toFixed(1)}°`:`斜向下 ${Math.abs(theta).toFixed(1)}°`);
+  $('info').innerHTML=
+    `每段绳张力 T = ${u.toFixed(2)}mg　两段合力 <b style="color:#7a4fa0">T合 = √2T = ${(1.4142*u).toFixed(2)}mg</b>（与竖直成45°、指向左上）<br>`+
+    `三力平衡：F⃗ = −(T合⃗ + mg⃗) ⇒ <b style="color:#d0342c">F = √(T²+(mg−T)²) = ${Fm.toFixed(3)}mg</b>，方向${dirStr}<br>`+
+    `T 增大时 F 方向：竖直向上(T→0) → 45°斜向上(T=0.5mg，F最小=√2mg/2) → 水平向右(T=mg，F=mg) → 右偏下(T>mg) → 极限 −45°；<b>永不竖直向下（D错）、不指向左侧</b>`;
+
+  $('optA').classList.toggle('active',Math.abs(u-1)<0.035);
+  $('optB').classList.toggle('active',Math.abs(u-0.5)<0.035);
+  $('optC').classList.toggle('active',Math.abs(u-1.8229)<0.05);
+}
+
+$('slider').addEventListener('input',update);
+$('showF').addEventListener('change',e=>
+  $('forces').setAttribute('visibility',e.target.checked?'visible':'hidden'));
+$('jA').onclick=()=>{$('slider').value=0.5;update();};
+$('jB').onclick=()=>{$('slider').value=1;update();};
+$('jC').onclick=()=>{$('slider').value=1.8229;update();};
+
+let timer=null;
+$('play').addEventListener('click',()=>{
+  if(timer){clearInterval(timer);timer=null;$('play').textContent='▶ 播放 T：0→3mg';return;}
+  $('slider').value=0.05;update();
+  timer=setInterval(()=>{
+    let v=parseFloat($('slider').value)+0.015;
+    if(v>=3){v=3;clearInterval(timer);timer=null;$('play').textContent='▶ 播放 T：0→3mg';}
+    $('slider').value=v;update();},30);
+});
+
+update();
+</script>
+</body>
+</html>

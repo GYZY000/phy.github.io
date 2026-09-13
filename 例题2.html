@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>【典例2】斜面小球与旋转挡板（可调节）</title>
+<style>
+  body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:#f7f7f2;
+       display:flex;flex-direction:column;align-items:center;margin:0;padding:14px;}
+  h3{margin:6px 0 10px;}
+  svg{background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15);border-radius:8px;}
+  .panel{margin:12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:center;
+         background:#fff;padding:10px 18px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);}
+  input[type=range]{width:180px;}
+  button{padding:6px 16px;cursor:pointer;border:1px solid #888;border-radius:5px;background:#eee;}
+  button:hover{background:#ddd;}
+  #info{background:#fff;padding:8px 22px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.12);
+        font-size:15px;line-height:1.8;text-align:center;}
+  .n1{color:#1e66d0;font-weight:bold;} .n2{color:#d0342c;font-weight:bold;}
+</style>
+</head>
+<body>
+
+<h3>【典例2】光滑小球 + 绕 O 点旋转的挡板（挡板在下、小球在上）</h3>
+
+<svg id="scene" width="780" height="540" viewBox="0 0 780 540">
+  <defs>
+    <marker id="mG"  markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#2e8b57"/></marker>
+    <marker id="mN1" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#1e66d0"/></marker>
+    <marker id="mN2" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#d0342c"/></marker>
+    <marker id="mR"  markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" fill="#7a4fa0"/></marker>
+  </defs>
+
+  <!-- 地面 -->
+  <line x1="70" y1="480" x2="520" y2="480" stroke="#333" stroke-width="2.5"/>
+  <g id="hatch" stroke="#555" stroke-width="1.5"></g>
+
+  <!-- 斜面（动态） -->
+  <polygon id="wedge" points="" fill="#fdfaf2" stroke="#333" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- θ 角 -->
+  <path id="arcT" d="" fill="none" stroke="#c47f17" stroke-width="1.6"/>
+  <text id="arcTt" font-size="17" fill="#c47f17" font-weight="bold" font-style="italic">θ</text>
+
+  <!-- 顺时针转动示意弧（画在挡板下坡一侧的空白区） -->
+  <path id="rotArc" d="" fill="none" stroke="#7a4fa0" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#mR)"/>
+  <text id="rotTxt" font-size="13" fill="#7a4fa0">顺时针转向竖直</text>
+
+  <!-- 转轴 O -->
+  <circle id="pivotO" r="4.5" fill="#fff" stroke="#222" stroke-width="2.5"/>
+  <text id="lblO" font-size="17" font-weight="bold" font-style="italic">O</text>
+
+  <!-- 挡板（双线） -->
+  <line id="baf1" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+  <line id="baf2" stroke="#333" stroke-width="1.5"/>
+
+  <!-- 小球（挡板上坡一侧） -->
+  <circle id="ball" r="36" fill="#eef4fb" stroke="#222" stroke-width="2.5"/>
+
+  <!-- 受力箭头 -->
+  <g id="forces">
+    <line id="fG"  stroke="#2e8b57" stroke-width="2.6" marker-end="url(#mG)"/>
+    <line id="fN1" stroke="#1e66d0" stroke-width="2.6" marker-end="url(#mN1)"/>
+    <line id="fN2" stroke="#d0342c" stroke-width="2.6" marker-end="url(#mN2)"/>
+    <text id="fGt"  font-size="16" fill="#2e8b57" font-weight="bold">G</text>
+    <text id="fN1t" font-size="15" fill="#1e66d0" font-weight="bold">N₁</text>
+    <text id="fN2t" font-size="15" fill="#d0342c" font-weight="bold">N₂</text>
+  </g>
+
+  <!-- 图解法矢量三角形 -->
+  <g id="inset">
+    <rect x="545" y="85" width="225" height="210" rx="8" fill="#fbfbf6" stroke="#bbb"/>
+    <text x="657" y="107" font-size="14" text-anchor="middle" fill="#555" font-weight="bold">力的矢量三角形（图解法）</text>
+    <line id="tG"  stroke="#2e8b57" stroke-width="2.2" marker-end="url(#mG)"/>
+    <line id="tN1" stroke="#1e66d0" stroke-width="2.2" marker-end="url(#mN1)"/>
+    <line id="tN2" stroke="#d0342c" stroke-width="2.2" marker-end="url(#mN2)"/>
+    <text id="tGt"  font-size="14" fill="#2e8b57" font-weight="bold">G</text>
+    <text id="tN1t" font-size="14" fill="#1e66d0" font-weight="bold">N₁</text>
+    <text id="tN2t" font-size="14" fill="#d0342c" font-weight="bold">N₂</text>
+  </g>
+</svg>
+
+<div class="panel">
+  <label>θ = <b id="thVal">30°</b></label>
+  <input type="range" id="thS" min="15" max="60" value="30" step="1">
+  <label>挡板转角 φ = <b id="phVal">0°</b></label>
+  <input type="range" id="phS" min="0" max="30" value="0" step="0.5">
+  <label><input type="checkbox" id="showF" checked> 显示受力</label>
+  <button id="play">▶ 挡板缓慢转向竖直</button>
+</div>
+
+<div id="info"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const NS="http://www.w3.org/2000/svg";
+const Ax=110, Gy=480, L=460, R=36, d0=220, S1=95;
+const P0={x:680,y:135};
+let theta=30, phi=0, timer=null;
+
+for(let x=84;x<=512;x+=16){
+  const l=document.createElementNS(NS,'line');
+  l.setAttribute('x1',x);l.setAttribute('y1',480);
+  l.setAttribute('x2',x-10);l.setAttribute('y2',491);$('hatch').appendChild(l);
+}
+
+function update(){
+  const th=theta*Math.PI/180, ph=phi*Math.PI/180;
+  const c=Math.cos(th), s=Math.sin(th);
+  const u={x:c,y:-s};                              // 沿斜面向上
+  const n={x:-s,y:-c};                             // 垂直斜面向外
+  const beta=th-ph;                                // 挡板偏离竖直的角度
+  const b={x:-Math.sin(beta),y:-Math.cos(beta)};   // 挡板方向（向上）
+  const q={x:-Math.cos(beta),y:Math.sin(beta)};    // 挡板厚度方向
+  const m={x:Math.cos(beta),y:-Math.sin(beta)};    // N₂ 方向：垂直挡板、指向球（上坡侧）
+
+  // 斜面
+  const Tx=Ax+L*c, Ty=Gy-L*s;
+  $('wedge').setAttribute('points',`${Ax},${Gy} ${Tx},${Ty} ${Tx},${Gy}`);
+
+  // θ 弧
+  $('arcT').setAttribute('d',`M ${Ax+44} ${Gy} A 44 44 0 0 0 ${Ax+44*c} ${Gy-44*s}`);
+  $('arcTt').setAttribute('x',Ax+60*Math.cos(th/2)-4);
+  $('arcTt').setAttribute('y',Gy-60*Math.sin(th/2)+6);
+  $('thVal').textContent=theta+'°';
+
+  // 转轴 O
+  const Ox=Ax+d0*c, Oy=Gy-d0*s;
+  $('pivotO').setAttribute('cx',Ox);$('pivotO').setAttribute('cy',Oy);
+  $('lblO').setAttribute('x',Ox+6);$('lblO').setAttribute('y',Oy+22);
+
+  // 挡板双线（下端插入斜面）
+  const top={x:Ox+230*b.x,y:Oy+230*b.y}, bot={x:Ox-24*b.x,y:Oy-24*b.y};
+  $('baf1').setAttribute('x1',bot.x);$('baf1').setAttribute('y1',bot.y);
+  $('baf1').setAttribute('x2',top.x);$('baf2');
+  $('baf1').setAttribute('x2',top.x);$('baf1').setAttribute('y2',top.y);
+  $('baf2').setAttribute('x1',bot.x-7*q.x);$('baf2').setAttribute('y1',bot.y-7*q.y);
+  $('baf2').setAttribute('x2',top.x-7*q.x);$('baf2').setAttribute('y2',top.y-7*q.y);
+
+  // 转动示意：从初始垂直斜面位置扫到竖直位置（画在挡板下坡侧空白区）
+  const rs=130;
+  $('rotArc').setAttribute('d',
+    `M ${Ox+rs*n.x} ${Oy+rs*n.y} A ${rs} ${rs} 0 0 1 ${Ox} ${Oy-rs}`);
+  const md={x:n.x,y:n.y-1}, ml=Math.hypot(md.x,md.y);
+  $('rotTxt').setAttribute('x',Ox+152*md.x/ml-52);
+  $('rotTxt').setAttribute('y',Oy+152*md.y/ml+4);
+
+  // 小球：与斜面相切、与挡板（上坡一侧）相切
+  const t=R*(1+Math.sin(ph))/Math.cos(ph);         // 球心沿斜面到 O 的距离（上坡为正）
+  const Cx=Ox+t*u.x+R*n.x, Cy=Oy+t*u.y+R*n.y;
+  $('ball').setAttribute('cx',Cx);$('ball').setAttribute('cy',Cy);
+
+  // 力大小（单位 mg）
+  const N2=Math.sin(th)/Math.cos(ph);
+  const N1=Math.cos(th-ph)/Math.cos(ph);
+
+  // 受力箭头
+  arrow('fG', Cx,Cy, 0,1, S1);
+  arrow('fN1',Cx,Cy, n.x,n.y, N1*S1);
+  arrow('fN2',Cx,Cy, m.x,m.y, N2*S1);
+  $('fGt').setAttribute('x',Cx+8);$('fGt').setAttribute('y',Cy+S1+16);
+  $('fN1t').setAttribute('x',Cx+N1*S1*n.x-24);$('fN1t').setAttribute('y',Cy+N1*S1*n.y);
+  $('fN2t').setAttribute('x',Cx+N2*S1*m.x+6);$('fN2t').setAttribute('y',Cy+N2*S1*m.y-6);
+
+  // 矢量三角形（G→N₁→N₂ 首尾相接，自动闭合）
+  const S2=Math.min(70,130/N1,130/N2);
+  const A={x:P0.x,y:P0.y+S2};
+  const B1={x:A.x+N1*S2*n.x, y:A.y+N1*S2*n.y};
+  seg('tG',P0,A); seg('tN1',A,B1); seg('tN2',B1,P0);
+  $('tGt').setAttribute('x',P0.x+9);$('tGt').setAttribute('y',(P0.y+A.y)/2+5);
+  $('tN1t').setAttribute('x',B1.x-26);$('tN1t').setAttribute('y',B1.y+4);
+  $('tN2t').setAttribute('x',(B1.x+P0.x)/2+8);$('tN2t').setAttribute('y',(B1.y+P0.y)/2-8);
+
+  $('phVal').textContent=phi.toFixed(1)+'°';
+  $('phS').setAttribute('max',theta);
+  $('info').innerHTML=
+    `θ = ${theta}°，挡板转角 φ：0°（垂直斜面，图中状态）→ ${theta}°（竖直）<br>`+
+    `挡板弹力 <span class="n2">N₂ = mg·sinθ/cosφ = ${N2.toFixed(2)} mg</span>　`+
+    `（${s.toFixed(2)}mg → ${(s/c).toFixed(2)}mg，<b>逐渐增大</b>）<br>`+
+    `斜面支持力 <span class="n1">N₁ = mg·cos(θ−φ)/cosφ = ${N1.toFixed(2)} mg</span>　`+
+    `（${c.toFixed(2)}mg → ${(1/c).toFixed(2)}mg，也逐渐增大）<br>`+
+    `小球对挡板压力逐渐增大（C、D 均错）→ <b style="color:#c47f17">选 B</b>`;
+}
+function arrow(id,x,y,dx,dy,len){
+  const l=$(id);l.setAttribute('x1',x);l.setAttribute('y1',y);
+  l.setAttribute('x2',x+dx*len);l.setAttribute('y2',y+dy*len);
+}
+function seg(id,a,b){
+  const l=$(id);l.setAttribute('x1',a.x);l.setAttribute('y1',a.y);
+  l.setAttribute('x2',b.x);l.setAttribute('y2',b.y);
+}
+
+$('thS').addEventListener('input',e=>{
+  theta=+e.target.value;
+  if(phi>theta){phi=theta;$('phS').value=theta;}
+  update();
+});
+$('phS').addEventListener('input',e=>{phi=+e.target.value;update();});
+$('showF').addEventListener('change',e=>{
+  const v=e.target.checked?'visible':'hidden';
+  $('forces').setAttribute('visibility',v);
+  $('inset').setAttribute('visibility',v);
+});
+$('play').addEventListener('click',()=>{
+  if(timer){clearInterval(timer);timer=null;$('play').textContent='▶ 挡板缓慢转向竖直';return;}
+  phi=0;$('phS').value=0;update();
+  timer=setInterval(()=>{
+    phi+=0.35;
+    if(phi>=theta){phi=theta;clearInterval(timer);timer=null;
+      $('play').textContent='▶ 挡板缓慢转向竖直';}
+    $('phS').value=phi;update();
+  },35);
+});
+
+update();
+</script>
+</body>
+</html>
